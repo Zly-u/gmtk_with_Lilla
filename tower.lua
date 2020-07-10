@@ -1,4 +1,4 @@
-local Bullet = require("bullet")
+--local Bullet = require("bullet")
 local Utils = require("utils")
 
 local Tower = {
@@ -8,7 +8,7 @@ local Tower = {
             self.angle = math.atan2(target.x-self.x, target.y-self.y)
             if self.last_shot > self.cooldown then
                 self.last_shot = 0
-                return Bullet.new(self.x, self.y, self.angle, self.projectile_params)
+                --return Bullet.new(self.x, self.y, self.angle, self.projectile_params)
             end
         end
         return nil

@@ -1,48 +1,74 @@
-Utils = require("utils")
+local Utils = require("utils")
 
 local engine = {
     towers = {},
     enemies = {},
-    map = {}
+    bullets = {},
+    path = {},
+    money = 0,
     
-    addTower = function(game, tower)
-        table.insert(game.towers, tower)
+    addTower = function(self, tower)
+        table.insert(self.towers, tower)
     end,
     
-    addEnemy = function(game, enemy)
-        table.insert(game.enemies, enemy)
+    addEnemy = function(self, enemy)
+        table.insert(self.enemies, enemy)
     end,
     
-    setMap = function(game, points)
-        game.map = points
+    setPath = function(self, points)
+        self.path = points
     end
     
-    clearTowers = function(game)
-        game.towers = {}
+    clearTowers = function(self)
+        self.towers = {}
     end,
     
-    clearEnemies = function(game)
-        game.enemies = {}
+    clearEnemies = function(self)
+        self.enemies = {}
     end,
     
-    update = function(game, dt)
-        for _, enemy in pairs(game.enemies) do
-            enemy:update(map, dt)
+    reset = function(self, path, startmoney)
+        self:clearEnemies()
+        self:clearTowers()
+        self:setPath(path)
+        self.money = startmoney
+    end,
+    
+    update = function(self, dt)
+        for _, enemy in pairs(self.enemies) do
+            enemy:update(path, dt)
         end
         
-        for _, tower in pairs(game.towers) do
+        for _, tower in pairs(self.towers) do
             tower:update(dt)
+            
             local target = nil
             local targetdist = tower.radius
-            for _, enemy in pairs(game.enemies) do
+            for _, enemy in pairs(self.enemies) do
                 local d = Utils.distanceOO(enemy, tower)
                 if d <= targetdist then
                     target = enemy
                     targetdist = d
                 end
             end
-            tower:fire(target, dt)
+            local bullet = tower:fire(target, dt)
+            if bullet then table.insert(self.bullets, bullet) end
         end
+    end,
+    
+    draw = function(self)
+        love.graphics.rectangle("line", 0,0, 720,720)
+        for _, enemy  in pairs(self.enemies) do enemy :draw() end
+        for _, tower  in pairs(self.towers ) do tower :draw() end
+        for _, bullet in pairs(self.bullets) do bullet:draw() end
+        local line = {}
+        for _, point in ipairs(self.path) do
+            table.insert(line, point[1])
+            table.insert(line, point[2])
+        end
+        love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
+        love.graphics.line(line)
     end
 }
+
 return engine

@@ -1,3 +1,6 @@
+math.randomseed(os.date())
+math.random()
+
 local Utils = {
     distanceOO = function(objA, objB)
         return ( (objA.x-objB.x)^2 + (objA.y-objB.y)^2 ) ^ 0.5
