@@ -256,7 +256,7 @@ local Tower = {
             end,
 
             init = function(self, clicks)
-                self.colour = Utils.HSVA(math.random(0, 359), 0.5, 1, 0.5)
+                self.colour = Utils.HSVA(math.random(0, 359), 0.5, 1, 0.4)
                 self.q_towers = {}
 
                 local boundary = self.radius/(2^0.5)

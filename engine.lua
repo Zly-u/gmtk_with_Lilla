@@ -100,24 +100,25 @@ local engine = {
     end,
 
     draw = function(self)
-        love.graphcis.setCanvas(self.canvas)
-        love.graphics.setColor(0,0,0,0)
-        love.graphics.clear()
-        
-        --Drawing entities
-        love.graphics.rectangle("line", 0,0, 720,720)
-        for _, enemy  in pairs(self.enemies) do enemy :draw() end
-        for _, tower  in pairs(self.towers ) do tower :draw() end
-        for _, bullet in pairs(self.bullets) do bullet:draw() end
+        love.graphics.setCanvas(self.canvas) do
+            love.graphics.setColor(0,0,0,0)
+            love.graphics.clear()
 
-        --Path preview
-        local line = {}
-        for _, point in ipairs(self.path) do
-            table.insert(line, point[1])
-            table.insert(line, point[2])
-        end
-        love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
-        love.graphics.line(line)
+            --Drawing entities
+            love.graphics.rectangle("line", 0,0, 720,720)
+            for _, enemy  in pairs(self.enemies) do enemy :draw() end
+            for _, tower  in pairs(self.towers ) do tower :draw() end
+            for _, bullet in pairs(self.bullets) do bullet:draw() end
+
+            --Path preview
+            local line = {}
+            for _, point in ipairs(self.path) do
+                table.insert(line, point[1])
+                table.insert(line, point[2])
+            end
+            love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
+            love.graphics.line(line)
+        end love.graphics.setCanvas()
 
         --oooooo GUI Related
         love.graphics.print(string.format("current funds: ¤%d", self.money), 750, 30)
@@ -129,8 +130,10 @@ local engine = {
             love.graphics.rectangle("line", 720, 50*k, 560, 50)
             love.graphics.print(string.format("%s: ¤%d", entry.name, entry.cost), 750, 20+50*k)
         end
-        
-        love.graphcis.setCanvas()
+
+        --Draw shits ooooooo
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(self.canvas)
     end,
     
     mousepressed = function(self, x, y, button, istouch, presses)

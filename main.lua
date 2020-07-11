@@ -34,7 +34,6 @@ function love.draw()
     love.graphics.setLineStyle("rough")
     Game:draw()
     love.graphics.setColor(1,1,1,1)
-    love.graphics.draw(Game.canvas)
     local mx, my = love.mouse.getPosition()
     love.graphics.line(mx-10, my-10, mx+10, my+10)
     love.graphics.line(mx-10, my+10, mx+10, my-10)
@@ -43,9 +42,7 @@ end
 
 ---[[
 function love.keypressed(key)
-        if key == "e" then Game:addEnemy(Enemy.new(0, 0, 25, 80, 0, 100, "basic"))
-    elseif key == "t" then Game:addTower(Tower.new(360, 360, 15, 100, 1))
-    end
+    if key == "e" then Game:addEnemy(Enemy.new(0, 0, 25, 80, 0, 100, "basic")) end
 end
 --]]
 
