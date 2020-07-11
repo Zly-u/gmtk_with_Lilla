@@ -53,6 +53,6 @@ function love.mousepressed(x, y, button, istouch, presses)
             patroling_radius = 100,
             isOutside = false,
         }
-        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5,"patrol", patrol_param))
+        Game:addTower(Tower.new(x, y, 15, 100, 10, math.pi/16, "basic", patrol_param))
     end
 end

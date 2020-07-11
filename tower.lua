@@ -17,7 +17,7 @@ local Tower = {
     towers = {
         basic = {
             --Gui related
-            cost = 0,
+            cost = 5,
             clicks = 1,
 
             --Tower related
@@ -48,7 +48,7 @@ local Tower = {
 
         patrol = {
             --Gui related
-            cost = 0,
+            cost = 100,
             clicks = 1,
 
             --Tower related
@@ -92,7 +92,7 @@ local Tower = {
 
         patrol2p = {
             --Gui related
-            cost = 0,
+            cost = 1e+99,
             clicks = 2,
 
             --Tower related

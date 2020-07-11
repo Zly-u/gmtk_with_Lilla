@@ -1,4 +1,5 @@
 local Utils = require("utils")
+local Tower = require("tower")
 
 local engine = {
     towers = {},
@@ -7,6 +8,7 @@ local engine = {
     path = {},
     money = 0,
     crossed = 0,
+    oob_distance = 100,
     
     addTower = function(self, tower)
         table.insert(self.towers, tower)
@@ -71,7 +73,11 @@ local engine = {
             if target then
                 -- bullet:hit(target) later, for now just apply damage and stop keeping track of the bullet -- Lilla
                 target.hp = target.hp - bullet.damage
-            elseif bullet.x > 0 and bullet.y > 0 and bullet.x < 720 and bullet.y < 720 then
+            elseif bullet.x >   0 - self.oob_distance
+            and    bullet.y >   0 - self.oob_distance
+            and    bullet.x < 720 + self.oob_distance
+            and    bullet.y < 720 + self.oob_distance
+            then
                 table.insert(nextframe_bullets, bullet)
             end
         end
@@ -81,7 +87,7 @@ local engine = {
             local enemy = self.enemies[k]
             if enemy.hp < 0 then
                 table.remove(self.enemies, k)
-                -- self.money = self.money + enemy.worth or something
+                self.money = self.money + enemy.money
             elseif enemy.reachedEnd then
                 table.remove(self.enemies, k)
                 self.crossed = self.crossed + 1
@@ -101,6 +107,18 @@ local engine = {
         end
         love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
         love.graphics.line(line)
+        
+        love.graphics.print(string.format("current funds: ¤%d", self.money), 750, 30)
+        
+        local k = 1
+        for name, tower in pairs(Tower.towers) do
+            love.graphics.setColor(Utils.HSVA(k*30, 1, 0.3))
+            love.graphics.rectangle("fill", 720, 50*k, 560, 50)
+            love.graphics.setColor(Utils.HSVA(k*30))
+            love.graphics.rectangle("line", 720, 50*k, 560, 50)
+            love.graphics.print(string.format("%s: ¤%d", name, tower.cost), 750, 20+50*k)
+            k = k + 1
+        end
     end
 }
 
