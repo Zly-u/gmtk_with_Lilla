@@ -73,7 +73,7 @@ local Tower = {
             init = function(self, clicks)
                 self.home_pos = {x = self.x, y = self.y}
                 self.patroling_radius = 100
-                self.self.isOutside = false
+                self.isOutside = false
             end,
 
             update = function(self, target, dt)
