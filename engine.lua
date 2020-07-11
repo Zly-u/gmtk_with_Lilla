@@ -42,8 +42,6 @@ local engine = {
         end
         
         for _, tower in pairs(self.towers) do
-            tower:update(dt)
-
             local target = nil
             local targetdist = tower.radius
             for _, enemy in pairs(self.enemies) do
@@ -53,7 +51,7 @@ local engine = {
                     targetdist = d
                 end
             end
-            local bullet = tower:fire(target, dt)
+            local bullet = tower:update(target, dt)
             if bullet then table.insert(self.bullets, bullet) end
         end
         

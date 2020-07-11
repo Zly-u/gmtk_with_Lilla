@@ -17,7 +17,11 @@ local Utils = {
     randomBool = function(pTrue)
         return math.random() < (pTrue or 0.5)
     end,
-    
+
+    angleBetweenOO = function(objA, objB)
+        return math.atan2(objB.y-objA.y, objB.x-objA.x)
+    end,
+
     HSVA = function(h, s, v, a)
         local colour
         h = h or 0

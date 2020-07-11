@@ -38,6 +38,8 @@ function Enemy.new(x, y, size, speed, dir, hp, _type)
         dir     = dir or 0,
 
         hp = hp or 100,
+        --dummy money variable
+        money = hp * speed,
 
         targetWaypoint = 1,
         reachedEnd = false,

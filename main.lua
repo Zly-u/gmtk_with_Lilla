@@ -21,7 +21,7 @@ end
 
 function love.update(dt)
     Game:update(dt)
-    next_spawn = next_spawn - dt
+    --next_spawn = next_spawn - dt
     if next_spawn <= 0 then
         Game:addEnemy(Enemy.new(0, 0, 10, 30, 0, 100, "basic"))
         next_spawn = (1-math.random())^2*9 + 1
@@ -38,9 +38,9 @@ function love.draw()
     love.graphics.circle("line", mx, my, 10)
 end
 
---[[
+---[[
 function love.keypressed(key)
-        if key == "e" then Game:addEnemy(Enemy.new(0, 0, 10, 30, 0, 100, "basic"))
+        if key == "e" then Game:addEnemy(Enemy.new(0, 0, 25, 30, 0, 100, "basic"))
     elseif key == "t" then Game:addTower(Tower.new(360, 360, 15, 100, 1))
     end
 end
@@ -48,6 +48,11 @@ end
 
 function love.mousepressed(x, y, button, istouch, presses)
     if button == 1 then
-        Game:addTower(Tower.new(x, y, 15, 100, 1))
+        local patrol_param = {
+            home_pos = {x = x, y = y},
+            patroling_radius = 100,
+            isOutside = false,
+        }
+        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5,"patrol", patrol_param))
     end
 end

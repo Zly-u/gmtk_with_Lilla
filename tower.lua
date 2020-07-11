@@ -5,57 +5,155 @@ local Tower = {
     fire = function(self, target, dt)
         self.last_shot = self.last_shot + dt
         if target then 
-            self.angle = math.atan2(target.y-self.y, target.x-self.x)
+            local angle = math.atan2(target.y-self.y, target.x-self.x)
             if self.last_shot > self.cooldown then
                 self.last_shot = 0
-                return Bullet.new(self.x, self.y, self.bullet.size, self.angle, self.bullet.speed, self.bullet.damage, self.bullet.type)
+                return Bullet.new(self.x, self.y, self.bullet.size, angle, self.bullet.speed, self.bullet.damage, self.bullet.type)
             end
         end
         return nil
     end,
-    
-    cooldowns = {
-        1,
-    },
-    
-    updates = {
-        function(self, dt)
-            local  linearspeed = 20
-            local angularspeed = math.pi/8
-            self.x = self.x + dt * linearspeed * math.cos(self.angle)
-            self.y = self.y + dt * linearspeed * math.sin(self.angle)
-            self.angle = self.angle + Utils.randomSign() * angularspeed
-        end,
-    },
-    
-    bullets = {
-        {size = 5, speed = 70, damage = 15, type = "basic"},
-    },
-    
-    draw = function(self)
-        love.graphics.setColor(self.colour)
-        love.graphics.circle("fill", self.x, self.y, self.size)
-        love.graphics.setColor(1,1,1,0.5)
-        love.graphics.circle("line", self.x, self.y, self.radius)
-        love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
-    end,
+
+    towers = {
+        basic = {
+            --Gui related
+            cost = 0,
+            clicks = 1,
+
+            --Tower related
+            cooldown = 1,
+
+            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            update = function(self, target, dt)
+                self.x = self.x + dt * self.speed * math.cos(self.angle)
+                self.y = self.y + dt * self.speed * math.sin(self.angle)
+
+                if not target then
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed
+                else
+                    self.angle = math.atan2(target.y-self.y, target.x-self.x)
+                    return self:fire(target, dt)
+                end
+
+            end,
+            draw = function(self)
+                love.graphics.setColor(self.colour)
+                love.graphics.circle("fill", self.x, self.y, self.size)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+            end,
+        },
+
+        patrol = {
+            --Gui related
+            cost = 0,
+            clicks = 1,
+
+            --Tower related
+            cooldown = 0.2,
+
+            bullet = {size = 3, speed = 120, damage = 4, type = "basic"},
+
+            update = function(self, target, dt)
+                if not target then
+                    if not self.isOutside then
+                        self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    end
+                    local d = Utils.distanceOO(self, self.home_pos)
+                    if d > self.patroling_radius and not self.isOutside then
+                        local home_angle = Utils.angleBetweenOO(self, self.home_pos)
+                        self.angle = home_angle - math.rad(math.random(-30, 30))
+                        self.isOutside = true
+                    end
+                    if d < self.patroling_radius * 0.7 and self.isOutside then
+                        self.isOutside = false
+                    end
+
+                    self.x = self.x + dt * self.speed * math.cos(self.angle)
+                    self.y = self.y + dt * self.speed * math.sin(self.angle)
+                else
+                    self.angle = Utils.angleBetweenOO(self, target)
+                    return self:fire(target, dt)
+                end
+            end,
+
+            draw = function(self)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.home_pos.x, self.home_pos.y, self.patroling_radius)
+                love.graphics.setColor(self.colour)
+                love.graphics.circle("fill", self.x, self.y, self.size)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+            end
+        },
+
+        patrol2p = {
+            --Gui related
+            cost = 0,
+            clicks = 2,
+
+            --Tower related
+            cooldown = 1,
+
+            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            update = function(self, target, dt)
+                self.x = self.x + dt * self.speed * math.cos(self.angle)
+                self.y = self.y + dt * self.speed * math.sin(self.angle)
+
+                if not target then
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed
+                else
+                    self.angle = math.atan2(target.y-self.y, target.x-self.x)
+                    return self:fire(target, dt)
+                end
+
+            end,
+            draw = function(self)
+                love.graphics.setColor(self.colour)
+                love.graphics.circle("fill", self.x, self.y, self.size)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+            end,
+        },
+    }
 }
-Tower.new = function(x, y, size, radius, type)
+function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
     local tower = {
         x = x,
         y = y,
         size = size,
         radius = radius,
+        speed = 20,
         colour = {0.1,0.7,0.5,1},
         last_shot = 0,
-        cooldown = Tower.cooldowns[type],
-        angle = 0,
-        bullet = Tower.bullets[type],
+        angle = math.pi*2*math.random(),
+        speed = speed,
+        angularspeed = ang_speed,
+
+        cooldown = Tower.towers[type].cooldown,
+        bullet   = Tower.towers[type].bullet,
         
-        update = Tower.updates[type],
-        draw = Tower.draw,
-        fire = Tower.fire,
+        update  = Tower.towers[type].update,
+        draw    = Tower.towers[type].draw,
+        fire    = Tower.fire,
     }
+
+    --For Patrol Tower
+    --[[
+        home_pos = {x = 0, y = 0},
+        patroling_radius = 100,
+        isOutside = false,
+    --]]
+
+    for name, val in pairs(extra or {}) do
+        tower[name] = val
+    end
+
     return tower
 end
 return Tower
