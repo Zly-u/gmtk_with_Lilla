@@ -23,11 +23,13 @@ end
 
 function love.update(dt)
     Game:update(dt)
+    --[[
     next_spawn = next_spawn - dt
     if next_spawn <= 0 then
         Game:addEnemy(Enemy.new(0, 0, 10, 30, 0, 100, "basic"))
         next_spawn = (1-math.random())^2*9 + 1
     end
+    ]]
 end
 
 function love.draw()

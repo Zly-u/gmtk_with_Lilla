@@ -17,6 +17,7 @@ local engine = {
     money = 0,
     crossed = 0,
     oob_distance = 100,
+    difficulty = 0,
     canvas = love.graphics.newCanvas(720,720),
     placing_tower = nil,
     tower_clicks = {},
@@ -47,6 +48,7 @@ local engine = {
         self:setPath(path)
         self.money = startmoney
         self.crossed = 0
+        self.difficulty = 0
     end,
     
     update = function(self, dt)
@@ -97,6 +99,8 @@ local engine = {
                 self.crossed = self.crossed + 1
             end
         end
+        
+        self.difficulty = self.difficulty + dt
     end,
 
     draw = function(self)
