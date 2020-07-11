@@ -5,7 +5,7 @@ local Tower = {
     fire = function(self, target, dt)
         self.last_shot = self.last_shot + dt
         if target then 
-            local angle = math.atan2(target.y-self.y, target.x-self.x)
+            local angle = Utils.angleBetweenOO(self, target)
             if self.last_shot > self.cooldown then
                 self.last_shot = 0
                 return Bullet.new(self.x, self.y, self.bullet.size, angle, self.bullet.speed, self.bullet.damage, self.bullet.type)
@@ -30,9 +30,9 @@ local Tower = {
                 self.y = self.y + dt * self.speed * math.sin(self.angle)
 
                 if not target then
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
                 else
-                    self.angle = math.atan2(target.y-self.y, target.x-self.x)
+                    self.angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
 
@@ -105,13 +105,83 @@ local Tower = {
                 self.y = self.y + dt * self.speed * math.sin(self.angle)
 
                 if not target then
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
                 else
-                    self.angle = math.atan2(target.y-self.y, target.x-self.x)
+                    self.angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
 
             end,
+            draw = function(self)
+                love.graphics.setColor(self.colour)
+                love.graphics.circle("fill", self.x, self.y, self.size)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+            end,
+        },
+
+        static = {
+            --Gui related
+            cost = 0,
+            clicks = 1,
+
+            --Tower related
+            cooldown = 1,
+
+            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            update = function(self, target, dt)
+                if not target then
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                else
+                    self.angle = Utils.angleBetweenOO(self, target)
+                    return self:fire(target, dt)
+                end
+
+            end,
+
+            draw = function(self)
+                love.graphics.setColor(self.colour)
+                love.graphics.circle("fill", self.x, self.y, self.size)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+            end,
+        },
+
+        teleporting = {
+            --Gui related
+            cost = 0,
+            clicks = 1,
+
+            --Tower related
+            cooldown = 1,
+
+            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            update = function(self, target, dt)
+                self.tp_delay = self.tp_delay + dt
+                if not target then
+                    if self.tp_delay >= self.tp_cooldown then
+                        local boundary = self.radius/(2^0.5)
+                        self.x, self.y = math.random(boundary, 720-boundary), math.random(boundary, 720-boundary)
+                        self.tp_delay = 0
+                    end
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                else
+                    if self.tp_delay >= self.tp_cooldown then
+                        local rngRadius = math.random(50, 100)
+                        local rngRad    = math.random()*math.tau
+                        self.x = target.x + math.cos(rngRad) * rngRadius
+                        self.y = target.y + math.sin(rngRad) * rngRadius
+                        self.tp_delay = 0
+                    end
+                    self.angle = Utils.angleBetweenOO(self, target)
+                    return self:fire(target, dt)
+                end
+            end,
+
             draw = function(self)
                 love.graphics.setColor(self.colour)
                 love.graphics.circle("fill", self.x, self.y, self.size)
@@ -131,7 +201,7 @@ function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
         speed = 20,
         colour = {0.1,0.7,0.5,1},
         last_shot = 0,
-        angle = math.pi*2*math.random(),
+        angle = math.tau*math.random(),
         speed = speed,
         angularspeed = ang_speed,
 
@@ -150,6 +220,11 @@ function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
         isOutside = false,
     --]]
 
+    --For Teeporting Tower
+    --[[
+        tp_cooldown = 1,
+        tp_delay = 0,
+    --]]
     for name, val in pairs(extra or {}) do
         tower[name] = val
     end

@@ -1,3 +1,5 @@
+require("init")
+
 local Game = require("engine")
 local Enemy = require("enemy")
 local Tower = require("tower")
@@ -40,7 +42,7 @@ end
 
 ---[[
 function love.keypressed(key)
-        if key == "e" then Game:addEnemy(Enemy.new(0, 0, 25, 30, 0, 100, "basic"))
+        if key == "e" then Game:addEnemy(Enemy.new(0, 0, 25, 80, 0, 100, "basic"))
     elseif key == "t" then Game:addTower(Tower.new(360, 360, 15, 100, 1))
     end
 end
@@ -53,6 +55,11 @@ function love.mousepressed(x, y, button, istouch, presses)
             patroling_radius = 100,
             isOutside = false,
         }
-        Game:addTower(Tower.new(x, y, 15, 100, 10, math.pi/16, "basic", patrol_param))
+        --Game:addTower(Tower.new(x, y, 15, 100, 10, math.pi/16, "basic", patrol_param))
+        local tp_param = {
+            tp_cooldown = 1,
+            tp_delay = 0,
+        }
+        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5,"teleporting", tp_param))
     end
 end

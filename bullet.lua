@@ -12,8 +12,6 @@ local Bullet = {
             end
         }
     },
-
-
 }
 
 Bullet.new = function(x, y, size, dir, speed, damage, _type)
