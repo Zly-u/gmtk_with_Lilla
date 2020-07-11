@@ -1,6 +1,14 @@
 local Utils = require("utils")
 local Tower = require("tower")
 
+local shoplist = {
+    {name = "Stroller",  cost =   100, clicks = 1, key = "basic"},
+    {name = "Patroller", cost =  2000, clicks = 1, key = "patrol"},
+    {name = "Marcher",   cost =  2000, clicks = 2, key = "patrol2p"},
+    {name = "Sleeper",   cost =  5000, clicks = 1, key = "static"},
+    {name = "Warper",    cost = 10000, clicks = 1, key = "teleporting"},
+}
+
 local engine = {
     towers = {},
     enemies = {},
@@ -9,6 +17,9 @@ local engine = {
     money = 0,
     crossed = 0,
     oob_distance = 100,
+    canvas = love.graphics.newCanvas(720,720),
+    placing_tower = nil,
+    tower_clicks = {},
     
     addTower = function(self, tower)
         table.insert(self.towers, tower)
@@ -110,14 +121,32 @@ local engine = {
         
         love.graphics.print(string.format("current funds: ¤%d", self.money), 750, 30)
         
-        local k = 1
-        for name, tower in pairs(Tower.towers) do
+        for k, entry in pairs(shoplist) do
             love.graphics.setColor(Utils.HSVA(k*30, 1, 0.3))
             love.graphics.rectangle("fill", 720, 50*k, 560, 50)
             love.graphics.setColor(Utils.HSVA(k*30))
             love.graphics.rectangle("line", 720, 50*k, 560, 50)
-            love.graphics.print(string.format("%s: ¤%d", name, tower.cost), 750, 20+50*k)
-            k = k + 1
+            love.graphics.print(string.format("%s: ¤%d", entry.name, entry.cost), 750, 20+50*k)
+        end
+    end,
+    
+    mousepressed = function(self, x, y, button, istouch, presses)
+        if button == 1 then 
+            if x >= 720 and not self.placing_tower then
+                local item = shoplist[math.floor(y/50)]
+                if item and self.money >= item.cost then
+                    self.money = self.money - item.cost
+                    self.tower_clicks = {}
+                    self.placing_tower = item
+                end
+            elseif x < 720 and self.placing_tower then
+                table.insert(self.tower_clicks, {x = x, y = y})
+                if #self.tower_clicks == self.placing_tower.clicks then
+                    local pos = table.remove(self.tower_clicks, 1)
+                    self:addTower(Tower.new(pos.x, pos.y, 15, 100, 15, math.pi/10, self.placing_tower.key, self.tower_clicks))
+                    self.placing_tower = nil
+                end
+            end
         end
     end
 }
