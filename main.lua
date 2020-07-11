@@ -49,20 +49,26 @@ end
 --]]
 
 function love.mousepressed(x, y, button, istouch, presses)
-    --[[
+    --[=[
     if button == 1 then
+        --[[
         local patrol_param = {
             home_pos = {x = x, y = y},
             patroling_radius = 100,
             isOutside = false,
         }
-        --Game:addTower(Tower.new(x, y, 15, 100, 10, math.pi/16, "basic", patrol_param))
+        Game:addTower(Tower.new(x, y, 15, 100, 10, math.pi/16, "basic", patrol_param))
+        --]]
+        --[[
         local tp_param = {
             tp_cooldown = 1,
             tp_delay = 0,
         }
-        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5,"teleporting", tp_param))
+        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5, "teleporting", tp_param))
+        --]]
+
+        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5, "quantum"))
     end
-    ]]
+    --]=]
     Game:mousepressed(x, y, button, istouch, presses)
 end

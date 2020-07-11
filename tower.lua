@@ -1,6 +1,20 @@
 local Bullet = require("bullet")
 local Utils = require("utils")
 
+local function common_isInRadius(self, targets)
+    local target = nil
+    local targetdist = self.radius
+    for _, enemy in pairs(targets) do
+        local d = Utils.distanceOO(self, enemy) - enemy.size
+        if d <= targetdist then
+            target = enemy
+            targetdist = d
+        end
+    end
+
+    return target
+end
+
 local Tower = {
     fire = function(self, target, dt)
         self.last_shot = self.last_shot + dt
@@ -16,14 +30,16 @@ local Tower = {
 
     towers = {
         basic = {
-            --Gui related
-            cost = 5,
-            clicks = 1,
-
-            --Tower related
+            cost = 0,
             cooldown = 1,
 
             bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            isInRadius = common_isInRadius,
+
+            init = function(self, clicks)
+
+            end,
 
             update = function(self, target, dt)
                 self.x = self.x + dt * self.speed * math.cos(self.angle)
@@ -47,14 +63,18 @@ local Tower = {
         },
 
         patrol = {
-            --Gui related
-            cost = 100,
-            clicks = 1,
-
-            --Tower related
+            cost = 0,
             cooldown = 0.2,
 
             bullet = {size = 3, speed = 120, damage = 4, type = "basic"},
+
+            isInRadius = common_isInRadius,
+
+            init = function(self, clicks)
+                self.home_pos = {x = self.x, y = self.y}
+                self.patroling_radius = 100
+                self.self.isOutside = false
+            end,
 
             update = function(self, target, dt)
                 if not target then
@@ -91,14 +111,16 @@ local Tower = {
         },
 
         patrol2p = {
-            --Gui related
-            cost = 1e+99,
-            clicks = 2,
-
-            --Tower related
+            cost = 0,
             cooldown = 1,
 
             bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            isInRadius = common_isInRadius,
+
+            init = function(self, clicks)
+
+            end,
 
             update = function(self, target, dt)
                 self.x = self.x + dt * self.speed * math.cos(self.angle)
@@ -122,14 +144,18 @@ local Tower = {
         },
 
         static = {
-            --Gui related
             cost = 0,
-            clicks = 1,
-
-            --Tower related
             cooldown = 1,
 
             bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            isInRadius = common_isInRadius,
+
+            init = function(self, params)
+                for name, val in pairs(params or {}) do
+                    self[name] = val
+                end
+            end,
 
             update = function(self, target, dt)
                 if not target then
@@ -151,14 +177,32 @@ local Tower = {
         },
 
         teleporting = {
-            --Gui related
             cost = 0,
-            clicks = 1,
-
-            --Tower related
             cooldown = 1,
 
             bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            upgrades = {
+                {
+                    cost = 10,
+
+                    cooldown = 0.5
+                },
+                {
+                    cost = 10,
+
+                    bullet = {
+                        damage = 2
+                    }
+                },
+            },
+
+            isInRadius = common_isInRadius,
+
+            init = function(self, clicks)
+                self.tp_cooldown = 1
+                self.tp_delay = 0
+            end,
 
             update = function(self, target, dt)
                 self.tp_delay = self.tp_delay + dt
@@ -190,6 +234,64 @@ local Tower = {
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
             end,
         },
+
+        quantum = {
+            cost = 0,
+            cooldown = 1,
+
+            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+
+            isInRadius = function(self, targets)
+                local target = nil
+                local targetdist = self.radius
+                for _, enemy in pairs(targets) do
+                    local d = Utils.distanceOO(self, enemy) - enemy.size
+                    if d <= targetdist then
+                        target = enemy
+                        targetdist = d
+                    end
+                end
+
+                return target
+            end,
+
+            init = function(self, clicks)
+                self.colour = Utils.HSVA(math.random(0, 359), 0.5, 1, 0.5)
+                self.q_towers = {}
+
+                local boundary = self.radius/(2^0.5)
+                table.insert(self.q_towers, {x = self.x, y = self.y})
+                for _ = 1, 3 do
+                    local pos = {
+                        x = math.random(boundary, 720-boundary),
+                        y = math.random(boundary, 720-boundary)
+                    }
+                    table.insert(self.q_towers, pos)
+                end
+            end,
+
+            update = function(self, target, dt)
+                self.x = self.x + dt * self.speed * math.cos(self.angle)
+                self.y = self.y + dt * self.speed * math.sin(self.angle)
+
+                if not target then
+                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                else
+                    self.angle = Utils.angleBetweenOO(self, target)
+                    return self:fire(target, dt)
+                end
+
+            end,
+            draw = function(self)
+                for _, q_tower in pairs(self.q_towers) do
+                    love.graphics.setColor(self.colour)
+                    love.graphics.circle("fill", q_tower.x, q_tower.y, self.size)
+                    love.graphics.setColor(1,1,1,0.5)
+                    love.graphics.circle("line", q_tower.x, q_tower.y, self.radius)
+                    love.graphics.line(q_tower.x, q_tower.y, q_tower.x+math.cos(self.angle)*self.radius, q_tower.y+math.sin(self.angle)*self.radius)
+                end
+            end,
+        },
     }
 }
 function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
@@ -208,9 +310,11 @@ function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
         cooldown = Tower.towers[type].cooldown,
         bullet   = Tower.towers[type].bullet,
         
-        update  = Tower.towers[type].update,
-        draw    = Tower.towers[type].draw,
-        fire    = Tower.fire,
+        init        = Tower.towers[type].init,
+        isInRadius  = Tower.towers[type].isInRadius,
+        update      = Tower.towers[type].update,
+        draw        = Tower.towers[type].draw,
+        fire        = Tower.fire,
     }
 
     --For Patrol Tower
@@ -225,9 +329,7 @@ function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
         tp_cooldown = 1,
         tp_delay = 0,
     --]]
-    for name, val in pairs(extra or {}) do
-        tower[name] = val
-    end
+    tower:init(extra)
 
     return tower
 end

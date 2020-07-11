@@ -1,3 +1,15 @@
+local function tablePrint(vTable, vTab)
+    local tab = vTab or ""
+    if type(vTable) ~= "table" then return end
+
+    for i, v in pairs(vTable) do
+        print(tab..tostring(i), v)
+        if type(v) == "table" and v ~= vTable then
+            tablePrint(v, tab.."\t")
+        end
+    end
+end
+
 local Utils = {
     distanceOO = function(objA, objB)
         return ( (objA.x-objB.x)^2 + (objA.y-objB.y)^2 ) ^ 0.5
@@ -46,6 +58,8 @@ local Utils = {
         
         return colour
     end,
+
+    tablePrint = tablePrint,
 }
 
 return Utils

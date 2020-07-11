@@ -53,17 +53,10 @@ local engine = {
         for _, enemy in pairs(self.enemies) do
             enemy:update(self.path, dt)
         end
-        
+
         for _, tower in pairs(self.towers) do
-            local target = nil
-            local targetdist = tower.radius
-            for _, enemy in pairs(self.enemies) do
-                local d = Utils.distanceOO(enemy, tower) - enemy.size
-                if d <= targetdist then
-                    target = enemy
-                    targetdist = d
-                end
-            end
+            local target = tower:isInRadius(self.enemies)
+
             local bullet = tower:update(target, dt)
             if bullet then table.insert(self.bullets, bullet) end
         end
@@ -107,10 +100,13 @@ local engine = {
     end,
 
     draw = function(self)
+        --Drawing entities
         love.graphics.rectangle("line", 0,0, 720,720)
         for _, enemy  in pairs(self.enemies) do enemy :draw() end
         for _, tower  in pairs(self.towers ) do tower :draw() end
         for _, bullet in pairs(self.bullets) do bullet:draw() end
+
+        --Path preview
         local line = {}
         for _, point in ipairs(self.path) do
             table.insert(line, point[1])
@@ -118,9 +114,10 @@ local engine = {
         end
         love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
         love.graphics.line(line)
-        
+
+        --oooooo GUI Related
         love.graphics.print(string.format("current funds: ¤%d", self.money), 750, 30)
-        
+
         for k, entry in pairs(shoplist) do
             love.graphics.setColor(Utils.HSVA(k*30, 1, 0.3))
             love.graphics.rectangle("fill", 720, 50*k, 560, 50)
