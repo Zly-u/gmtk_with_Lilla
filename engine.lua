@@ -149,7 +149,8 @@ local engine = {
                 table.insert(self.tower_clicks, {x = x, y = y})
                 if #self.tower_clicks == self.placing_tower.clicks then
                     local pos = table.remove(self.tower_clicks, 1)
-                    self:addTower(Tower.new(pos.x, pos.y, 15, 100, 15, math.pi/10, self.placing_tower.key, self.tower_clicks))
+                    self:addTower(Tower.new(pos.x, pos.y, 15, 100, 15,
+                                math.pi/10, self.placing_tower.key, self.tower_clicks))
                     self.placing_tower = nil
                 end
             end

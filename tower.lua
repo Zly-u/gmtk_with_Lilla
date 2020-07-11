@@ -119,20 +119,32 @@ local Tower = {
             isInRadius = common_isInRadius,
 
             init = function(self, clicks)
-
+                local click = clicks[1]
+                self.targetWaypoint = 1
+                self.path = {
+                    {x = self.x, y = self.y},
+                    {x = click.x, y = click.y}
+                }
             end,
 
             update = function(self, target, dt)
-                self.x = self.x + dt * self.speed * math.cos(self.angle)
-                self.y = self.y + dt * self.speed * math.sin(self.angle)
-
                 if not target then
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    self.x = self.x + dt * self.speed * math.cos(self.angle)
+                    self.y = self.y + dt * self.speed * math.sin(self.angle)
+                    local waypoint = {
+                        x = self.path[self.targetWaypoint].x,
+                        y = self.path[self.targetWaypoint].y
+                    }
+
+                    self.angle = Utils.angleBetweenOO(self, waypoint)
+                    local d = Utils.distanceXYXY(self.x, self.y, waypoint.x, waypoint.y)
+                    if d < 5 then
+                        self.targetWaypoint = (self.targetWaypoint % #self.path) + 1
+                    end
                 else
                     self.angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
-
             end,
             draw = function(self)
                 love.graphics.setColor(self.colour)
@@ -140,6 +152,8 @@ local Tower = {
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+
+                love.graphics.line(self.path[1].x, self.path[1].y, self.path[2].x, self.path[2].y)
             end,
         },
 
@@ -242,22 +256,31 @@ local Tower = {
             bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
 
             isInRadius = function(self, targets)
-                local target = nil
-                local targetdist = self.radius
-                for _, enemy in pairs(targets) do
-                    local d = Utils.distanceOO(self, enemy) - enemy.size
-                    if d <= targetdist then
-                        target = enemy
-                        targetdist = d
+                local targetList = {}
+                for _, q_tower in pairs(self.q_towers) do
+                    local target = nil
+                    local targetdist = self.radius
+                    for _, enemy in pairs(targets) do
+                        local d = Utils.distanceOO(q_tower, enemy) - enemy.size
+                        if d <= targetdist then
+                            target = enemy
+                            targetdist = d
+                        end
+                    end
+                    if target then
+                        table.insert(targetList, target)
                     end
                 end
 
-                return target
+                return targetList[math.random(#targetList)]
             end,
 
             init = function(self, clicks)
                 self.colour = Utils.HSVA(math.random(0, 359), 0.5, 1, 0.4)
                 self.q_towers = {}
+
+                self.switch_cooldown = 1
+                self.switch_delay = 0
 
                 local boundary = self.radius/(2^0.5)
                 table.insert(self.q_towers, {x = self.x, y = self.y})
@@ -271,8 +294,13 @@ local Tower = {
             end,
 
             update = function(self, target, dt)
-                self.x = self.x + dt * self.speed * math.cos(self.angle)
-                self.y = self.y + dt * self.speed * math.sin(self.angle)
+                self.switch_delay = self.switch_delay + dt
+                if self.switch_delay >= self.switch_cooldown then
+                    local rngActive = self.q_towers[math.random(#self.q_towers)]
+                    self.x, self.y = rngActive.x, rngActive.y
+                    self.switch_cooldown = 0.2 + math.random()
+                    self.switch_delay = 0
+                end
 
                 if not target then
                     self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
@@ -280,16 +308,22 @@ local Tower = {
                     self.angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
-
             end,
+
             draw = function(self)
+                local points = {}
                 for _, q_tower in pairs(self.q_towers) do
                     love.graphics.setColor(self.colour)
                     love.graphics.circle("fill", q_tower.x, q_tower.y, self.size)
                     love.graphics.setColor(1,1,1,0.5)
                     love.graphics.circle("line", q_tower.x, q_tower.y, self.radius)
                     love.graphics.line(q_tower.x, q_tower.y, q_tower.x+math.cos(self.angle)*self.radius, q_tower.y+math.sin(self.angle)*self.radius)
+
+                    table.insert(points, q_tower.x)
+                    table.insert(points, q_tower.y)
                 end
+
+                love.graphics.polygon("line", points)
             end,
         },
     }
@@ -317,18 +351,6 @@ function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
         fire        = Tower.fire,
     }
 
-    --For Patrol Tower
-    --[[
-        home_pos = {x = 0, y = 0},
-        patroling_radius = 100,
-        isOutside = false,
-    --]]
-
-    --For Teeporting Tower
-    --[[
-        tp_cooldown = 1,
-        tp_delay = 0,
-    --]]
     tower:init(extra)
 
     return tower
