@@ -1,6 +1,9 @@
 local Bullet = {
     bullets = {
         basic = {
+            init = function(self)
+
+            end,
             update = function(self, dt)
                 self.x = self.x+math.cos(self.dir)*self.speed*dt
                 self.y = self.y+math.sin(self.dir)*self.speed*dt
@@ -28,10 +31,12 @@ Bullet.new = function(x, y, size, dir, speed, damage, _type)
         --destX = nil,
         --destY = nil,
 
-        update = Bullet.bullets[_type].update,
-        draw = Bullet.bullets[_type].draw
+        init    = Bullet.bullets[_type].init,
+        update  = Bullet.bullets[_type].update,
+        draw    = Bullet.bullets[_type].draw
     }
 
+    bullet:init()
     return bullet
 end
 

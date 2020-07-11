@@ -1,33 +1,37 @@
 local Utils = require("utils")
 
 local Enemy = {
-    updates = {
-        basic = function(self, path, dt)
-            self.x = self.x+math.cos(self.dir)*self.speed*dt
-            self.y = self.y+math.sin(self.dir)*self.speed*dt
+    enemies = {
+        basic = {
+            init = function(self)
 
-            local waypoint = {
-                x = path[self.targetWaypoint][1],
-                y = path[self.targetWaypoint][2]
-            }
+            end,
+            update = function(self, path, dt)
+                self.x = self.x+math.cos(self.dir)*self.speed*dt
+                self.y = self.y+math.sin(self.dir)*self.speed*dt
 
-            self.dir = Utils.angleBetweenOO(self, waypoint)
-            local d = Utils.distanceXYXY(self.x, self.y, waypoint.x, waypoint.y)
-            if d < 5 then
-                if self.targetWaypoint < #path then
-                    self.targetWaypoint = self.targetWaypoint + 1
-                else
-                    self.reachedEnd = true
+                local waypoint = {
+                    x = path[self.targetWaypoint][1],
+                    y = path[self.targetWaypoint][2]
+                }
+
+                self.dir = Utils.angleBetweenOO(self, waypoint)
+                local d = Utils.distanceXYXY(self.x, self.y, waypoint.x, waypoint.y)
+                if d < 5 then
+                    if self.targetWaypoint < #path then
+                        self.targetWaypoint = self.targetWaypoint + 1
+                    else
+                        self.reachedEnd = true
+                    end
                 end
+            end,
+            draw = function(self)
+                love.graphics.setColor(1, 0, 0, 1)
+                love.graphics.rectangle("fill", self.x-self.size/2, self.y-self.size/2, self.size, self.size)
+                love.graphics.setColor(1, 1, 1, 1)
             end
-        end
+        }
     },
-
-    draw = function(self)
-        love.graphics.setColor(1, 0, 0, 1)
-        love.graphics.rectangle("fill", self.x-self.size/2, self.y-self.size/2, self.size, self.size)
-        love.graphics.setColor(1, 1, 1, 1)
-    end,
 }
 
 function Enemy.new(x, y, size, speed, dir, hp, _type)
@@ -46,10 +50,12 @@ function Enemy.new(x, y, size, speed, dir, hp, _type)
         reachedEnd = false,
         --sprite  = {},
 
-        update = Enemy.updates[_type],
-        draw = Enemy.draw
+        init    = Enemy.enemies[_type].init,
+        update  = Enemy.enemies[_type].update,
+        draw    = Enemy.enemies[_type].draw
     }
 
+    enemy:init()
     return enemy
 end
 
