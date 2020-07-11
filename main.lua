@@ -18,7 +18,7 @@ local pathWay = {
 local next_spawn = 3
 
 function love.load()
-    Game:reset(pathWay, 500)
+    Game:reset(pathWay, 500000000)
 end
 
 function love.update(dt)
@@ -36,10 +36,6 @@ function love.draw()
     love.graphics.setLineStyle("rough")
     Game:draw()
     love.graphics.setColor(1,1,1,1)
-    local mx, my = love.mouse.getPosition()
-    love.graphics.line(mx-10, my-10, mx+10, my+10)
-    love.graphics.line(mx-10, my+10, mx+10, my-10)
-    love.graphics.circle("line", mx, my, 10)
 end
 
 ---[[

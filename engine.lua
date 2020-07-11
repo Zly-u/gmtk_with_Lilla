@@ -2,11 +2,11 @@ local Utils = require("utils")
 local Tower = require("tower")
 
 local shoplist = {
-    {name = "Stroller",  cost =   100, clicks = 1, key = "basic"},
-    {name = "Patroller", cost =  2000, clicks = 1, key = "patrol"},
-    {name = "Marcher",   cost =  2000, clicks = 2, key = "patrol2p"},
-    {name = "Sleeper",   cost =  5000, clicks = 1, key = "static"},
-    {name = "Warper",    cost = 10000, clicks = 1, key = "teleporting"},
+    {i = 1, name = "Stroller",  cost =   100, clicks = 1, key = "basic"},
+    {i = 2, name = "Patroller", cost =  2000, clicks = 1, key = "patrol"},
+    {i = 3, name = "Marcher",   cost =  2000, clicks = 2, key = "patrol2p"},
+    {i = 4, name = "Sleeper",   cost =  5000, clicks = 1, key = "static"},
+    {i = 5, name = "Warper",    cost = 10000, clicks = 1, key = "teleporting"},
 }
 
 local engine = {
@@ -138,6 +138,17 @@ local engine = {
         --Draw shits ooooooo
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(self.canvas)
+        
+        if self.placing_tower then
+            love.graphics.setColor(Utils.HSVA(self.placing_tower.i*30))
+            for _, pt in ipairs(self.tower_clicks) do
+            love.graphics.circle("line", pt.x, pt.y, 5)
+            end
+        end
+        local mx, my = love.mouse.getPosition()
+        love.graphics.line(mx-10, my-10, mx+10, my+10)
+        love.graphics.line(mx-10, my+10, mx+10, my-10)
+        love.graphics.circle("line", mx, my, 10)
     end,
     
     mousepressed = function(self, x, y, button, istouch, presses)
