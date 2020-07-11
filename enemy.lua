@@ -6,12 +6,13 @@ local Enemy = {
             self.x = self.x+math.cos(self.dir)*self.speed*dt
             self.y = self.y+math.sin(self.dir)*self.speed*dt
 
-            local waypointX = path[self.targetWaypoint][1]
-            local waypointY = path[self.targetWaypoint][2]
+            local waypoint = {
+                x = path[self.targetWaypoint][1],
+                y = path[self.targetWaypoint][2]
+            }
 
-            self.dir = math.atan2(waypointY-self.y, waypointX-self.x)
-
-            local d = Utils.distanceXYXY(self.x, self.y, waypointX, waypointY)
+            self.dir = Utils.angleBetweenOO(self, waypoint)
+            local d = Utils.distanceXYXY(self.x, self.y, waypoint.x, waypoint.y)
             if d < 5 then
                 if self.targetWaypoint < #path then
                     self.targetWaypoint = self.targetWaypoint + 1
