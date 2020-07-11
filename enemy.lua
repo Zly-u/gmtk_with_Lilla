@@ -13,11 +13,10 @@ local Enemy = {
 
             local d = Utils.distanceXYXY(self.x, self.y, waypointX, waypointY)
             if d < 5 then
-                print(self.targetWaypoint)
                 if self.targetWaypoint < #path then
                     self.targetWaypoint = self.targetWaypoint + 1
                 else
-                    self.isReached = true
+                    self.reachedEnd = true
                 end
             end
         end
@@ -41,7 +40,7 @@ function Enemy.new(x, y, size, speed, dir, hp, _type)
         hp = hp or 100,
 
         targetWaypoint = 1,
-        isReached = false,
+        reachedEnd = false,
         --sprite  = {},
 
         update = Enemy.updates[_type],
