@@ -100,6 +100,10 @@ local engine = {
     end,
 
     draw = function(self)
+        love.graphcis.setCanvas(self.canvas)
+        love.graphics.setColor(0,0,0,0)
+        love.graphics.clear()
+        
         --Drawing entities
         love.graphics.rectangle("line", 0,0, 720,720)
         for _, enemy  in pairs(self.enemies) do enemy :draw() end
@@ -125,6 +129,8 @@ local engine = {
             love.graphics.rectangle("line", 720, 50*k, 560, 50)
             love.graphics.print(string.format("%s: ¤%d", entry.name, entry.cost), 750, 20+50*k)
         end
+        
+        love.graphcis.setCanvas()
     end,
     
     mousepressed = function(self, x, y, button, istouch, presses)
