@@ -1,4 +1,4 @@
-math.randomseed(os.date())
+math.randomseed(os.time())
 math.random()
 
 local Utils = {

@@ -10,15 +10,15 @@ local engine = {
     addTower = function(self, tower)
         table.insert(self.towers, tower)
     end,
-    
+
     addEnemy = function(self, enemy)
         table.insert(self.enemies, enemy)
     end,
     
     setPath = function(self, points)
         self.path = points
-    end
-    
+    end,
+
     clearTowers = function(self)
         self.towers = {}
     end,
@@ -36,12 +36,14 @@ local engine = {
     
     update = function(self, dt)
         for _, enemy in pairs(self.enemies) do
-            enemy:update(path, dt)
+            if not enemy.isReached then --Temporarly for lilla
+                enemy:update(self.path, dt)
+            end
         end
         
         for _, tower in pairs(self.towers) do
             tower:update(dt)
-            
+
             local target = nil
             local targetdist = tower.radius
             for _, enemy in pairs(self.enemies) do
@@ -55,7 +57,7 @@ local engine = {
             if bullet then table.insert(self.bullets, bullet) end
         end
     end,
-    
+
     draw = function(self)
         love.graphics.rectangle("line", 0,0, 720,720)
         for _, enemy  in pairs(self.enemies) do enemy :draw() end
