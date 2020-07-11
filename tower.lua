@@ -66,7 +66,7 @@ local Tower = {
             cost = 0,
             cooldown = 0.2,
 
-            bullet = {size = 3, speed = 120, damage = 4, type = "basic"},
+            bullet = {size = 3, speed = 150, damage = 7, type = "basic"},
 
             isInRadius = common_isInRadius,
 
@@ -112,9 +112,9 @@ local Tower = {
 
         patrol2p = {
             cost = 0,
-            cooldown = 1,
+            cooldown = 0.2,
 
-            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+            bullet = {size = 3, speed = 150, damage = 7, type = "basic"},
 
             isInRadius = common_isInRadius,
 
@@ -159,24 +159,43 @@ local Tower = {
 
         static = {
             cost = 0,
-            cooldown = 1,
+            cooldown = 5,
 
-            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+            bullet = {size = 20, speed = 20, damage = 85, type = "basic"},
 
             isInRadius = common_isInRadius,
 
             init = function(self, params)
-                for name, val in pairs(params or {}) do
-                    self[name] = val
-                end
+                self.cooldown = math.random(5)
+                self.sleep_max = 2
+                self.sleep_current = 0
+                self.sleeping = true
+                self.colour[4] = 0.5
             end,
 
             update = function(self, target, dt)
                 if not target then
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    --self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    if not self.sleeping then
+                        self.sleep_current = self.sleep_current + dt/2
+                        if self.sleep_current > self.sleep_max then
+                            self.colour[4] = 0.5
+                            self.sleep_current = 0
+                            self.sleeping = true
+                        end
+                    end
+                elseif self.sleeping then
+                    self.sleep_current = self.sleep_current + dt
+                    if self.sleep_current > self.sleep_max then
+                        self.colour[4] = 1
+                        self.sleep_current = 0
+                        self.sleeping = false
+                    end
                 else
                     self.angle = Utils.angleBetweenOO(self, target)
-                    return self:fire(target, dt)
+                    local b = self:fire(target, dt)
+                    if self.last_shot == 0 then self.cooldown = math.random(5) end
+                    return b
                 end
 
             end,
@@ -284,12 +303,8 @@ local Tower = {
 
                 local boundary = self.radius/(2^0.5)
                 table.insert(self.q_towers, {x = self.x, y = self.y})
-                for _ = 1, 3 do
-                    local pos = {
-                        x = math.random(boundary, 720-boundary),
-                        y = math.random(boundary, 720-boundary)
-                    }
-                    table.insert(self.q_towers, pos)
+                for _, pt in ipairs(clicks) do
+                    table.insert(self.q_towers, pt)
                 end
             end,
 

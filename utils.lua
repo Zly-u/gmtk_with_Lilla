@@ -58,7 +58,20 @@ local Utils = {
         
         return colour
     end,
+    
+    commaValue = function(n) -- credit http://richard.warburton.it
+        local left,num,right = string.match(n,'^([^%d]*%d)(%d*)(.-)$')
+        return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
+    end,
 
+    truncate = function(n, d)
+        -- if d is negative, truncate n to -d digits after the decimal point
+        -- if d is positive, round n down to a multiple of 10^d (leaving d 0s before the decimal point)
+        d = d or 0
+        local e = 10^d
+        return math.floor(n/e)*e
+    end,
+    
     tablePrint = tablePrint,
 }
 

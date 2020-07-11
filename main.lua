@@ -18,7 +18,7 @@ local pathWay = {
 local next_spawn = 3
 
 function love.load()
-    Game:reset(pathWay, 500000000)
+    Game:reset(pathWay, 500)
 end
 
 function love.update(dt)
