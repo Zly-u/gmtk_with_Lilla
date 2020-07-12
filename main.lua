@@ -34,6 +34,7 @@ end
 
 function love.draw()
     love.graphics.setLineStyle("rough")
+    love.graphics.setLineJoin("bevel")
     Game:draw()
     love.graphics.setColor(1,1,1,1)
 end

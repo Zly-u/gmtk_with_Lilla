@@ -206,13 +206,19 @@ local engine = {
             
             --Path preview
             local line = {}
+            local line_dip = {}
             for _, point in ipairs(self.path) do
                 table.insert(line, point[1])
                 table.insert(line, point[2])
+                table.insert(line_dip, point[1])
+                table.insert(line_dip, point[2]-0.5*paththickness)
             end
             love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
             love.graphics.setLineWidth(2*paththickness)
             love.graphics.line(line)
+            love.graphics.setColor(Utils.HSVA(45, 0.7, 0.5, 1))
+            love.graphics.setLineWidth(paththickness)
+            love.graphics.line(line_dip)
             love.graphics.setLineWidth(1)
 
             --Drawing entities
@@ -264,7 +270,7 @@ local engine = {
         if button == 1 then 
             if x >= 720 and not self.placing_tower then
                 local item = shoplist[math.floor(y/50)]
-                local currentcost = item.cost*costscale^self.tower_counts[item.i]
+                local currentcost = item and item.cost*costscale^self.tower_counts[item.i]
                 if item and self.money >= currentcost then
                     self.money = self.money - currentcost
                     self.tower_clicks = {}
