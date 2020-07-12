@@ -393,6 +393,75 @@ local Tower = {
                 love.graphics.polygon("line", points)
             end,
         },
+        
+        little_goblin = {
+            cost = 0,
+            cooldown = 0.02,
+
+            bullet = {size = 5, speed = 160, damage = 15, type = "basic"},
+
+            isInRadius = common_isInRadius,
+
+            init = function(self, _)
+                self.actual_angle = math.random()*math.tau
+                self.angle = self.actual_angle
+                self.angular_speed = math.pi/2
+
+                self.turn_cooldown = 0.2 + math.random()*0.8
+                self.turn_delay = 0
+            end,
+
+            update = function(self, target, dt)
+
+                if not target then
+                    
+
+                    --What it draws and uses to calculate stuff with enemy's pos
+                    local smoothingVal = not target and 0.04 or 0.2
+                    self.x = self.x + (self.actual_x - self.x) * smoothingVal
+                    self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
+
+                    --Actual Position
+                    self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
+                    self.actual_y = self.actual_y+math.sin(self.angle)*self.speed*dt
+                    
+                    self.turn_delay = self.turn_delay + dt
+                    if self.turn_delay >= self.turn_cooldown then
+                        self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
+                        self.turn_cooldown = 0.2 + math.random()*0.8
+                        self.turn_delay = 0
+                    end
+                else
+                    --self.actual_angle = Utils.angleBetweenOO(self, target)
+                    --return self:fire(target, dt)
+                    for k = 1, 5 do
+                        self.last_shot = self.last_shot + dt
+                        if target then
+                            if self.last_shot > self.cooldown then
+                                self.last_shot = 0
+                                return Bullet.new(self.x, self.y,
+                                                  self.bullet.size,
+                                                  math.random()*math.tau,
+                                                  self.bullet.speed*(0.9+0.2*math.random()),
+                                                  self.bullet.damage,
+                                                  self.bullet.type
+                                )
+                            end
+                        end
+                        return nil
+                    end
+                end
+
+            end,
+            draw = function(self)
+                love.graphics.setColor(self.colour)
+                love.graphics.circle("fill", self.x, self.y, self.size)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                love.graphics.line(self.x, self.y, self.actual_x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+            end,
+        }
     }
 }
 function Tower.new(x, y, type, extra)
