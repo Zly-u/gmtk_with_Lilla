@@ -89,98 +89,100 @@ local engine = {
     end,
     
     update = function(self, dt)
-        for _, enemy in pairs(self.enemies) do
-            enemy:update(self.path, dt)
-        end
-
-        for _, _tower in pairs(self.towers) do
-            local target = _tower:isInRadius(self.enemies)
-            local bullet = _tower:update(target, dt)
-
-            for _, tower in pairs(_tower.q_towers or {_tower}) do
-                if bullet then table.insert(self.bullets, bullet) end
-                for k = 2, #self.path do
-                    local a_tower = {x = tower.actual_x, y = tower.actual_y}
-                    local proj = Utils.closestPtOnLn(a_tower, self.path[k-1], self.path[k])
-                    local dist = Utils.distanceOO(proj, a_tower)
-                    while dist == 0 do
-                        tower.actual_x = tower.actual_x + math.random()*0.2-0.1
-                        tower.actual_y = tower.actual_y + math.random()*0.2-0.1
-                        a_tower = {x = tower.actual_x, y = tower.actual_y}
-                        proj = Utils.closestPtOnLn(a_tower, self.path[k-1], self.path[k])
-                        dist = Utils.distanceOO(proj, a_tower)
-                    end
-
-                    if dist < paththickness then
-                        local a_tower = {x = tower.actual_x, y = tower.actual_y}
-                        local newpos = Utils.extendLine(proj, a_tower, paththickness)
-                        tower.actual_x = newpos.x
-                        tower.actual_y = newpos.y
-                    end
-                end
-            end
-        end
-        
-        local nextframe_bullets = {}
-        for _, bullet in pairs(self.bullets) do
-            bullet:update(dt)
-
-            local target = nil
-            local targetdist = bullet.size
+        if self.health > 0 then
             for _, enemy in pairs(self.enemies) do
-                local d = Utils.distanceOO(enemy, bullet) - enemy.size
-                if d <= targetdist then
-                    target = enemy
-                    targetdist = d
+                enemy:update(self.path, dt)
+            end
+
+            for _, _tower in pairs(self.towers) do
+                local target = _tower:isInRadius(self.enemies)
+                local bullet = _tower:update(target, dt)
+
+                for _, tower in pairs(_tower.q_towers or {_tower}) do
+                    if bullet then table.insert(self.bullets, bullet) end
+                    for k = 2, #self.path do
+                        local a_tower = {x = tower.actual_x, y = tower.actual_y}
+                        local proj = Utils.closestPtOnLn(a_tower, self.path[k-1], self.path[k])
+                        local dist = Utils.distanceOO(proj, a_tower)
+                        while dist == 0 do
+                            tower.actual_x = tower.actual_x + math.random()*0.2-0.1
+                            tower.actual_y = tower.actual_y + math.random()*0.2-0.1
+                            a_tower = {x = tower.actual_x, y = tower.actual_y}
+                            proj = Utils.closestPtOnLn(a_tower, self.path[k-1], self.path[k])
+                            dist = Utils.distanceOO(proj, a_tower)
+                        end
+
+                        if dist < paththickness then
+                            local a_tower = {x = tower.actual_x, y = tower.actual_y}
+                            local newpos = Utils.extendLine(proj, a_tower, paththickness)
+                            tower.actual_x = newpos.x
+                            tower.actual_y = newpos.y
+                        end
+                    end
                 end
             end
-            if target then
-                -- bullet:hit(target) later, for now just apply damage and stop keeping track of the bullet -- Lilla
-                target.hp = target.hp - bullet.damage
-            elseif bullet.x >   0 - self.oob_distance
-            and    bullet.y >   0 - self.oob_distance
-            and    bullet.x < 720 + self.oob_distance
-            and    bullet.y < 720 + self.oob_distance
-            then
-                table.insert(nextframe_bullets, bullet)
-            end
-        end
-        self.bullets = nextframe_bullets
-        
-        for k = #self.enemies, 1, -1 do
-            local enemy = self.enemies[k]
-            if enemy.hp < 0 then
-                table.remove(self.enemies, k)
-                self.money = self.money + enemy.money
-            elseif enemy.reachedEnd then
-                table.remove(self.enemies, k)
-                self.crossed = self.crossed + 1
-            end
-        end
-        
-        --enemy spawn attempt 2
-        if self.next_wave_in > 0 then
-            self.next_wave_in = self.next_wave_in - dt
-            if self.next_wave_in <= 0 then
-                self.wave_count = self.wave_count + 1
-                self.wave_enemies_left = self.wave_count
-            end
-        else
-            if self.next_enemy_in > 0 then
-                self.next_enemy_in = self.next_enemy_in - dt
-            else
-                local e = enemy_kinds[math.random(math.min(math.floor(self.wave_count/5 + 1), #enemy_kinds))]
-                local x, y = unpack(self.path[1])
-                self:addEnemy(Enemy.new(x, y, e.size, e.speed, Utils.angleBetweenXYXY(x,  y, self.path[2][1], self.path[2][2]), e.hp, e.type))
-                self.wave_enemies_left = self.wave_enemies_left - 1
-                if self.wave_enemies_left > 0 then
-                    self.next_enemy_in = math.random()*2+0.5
-                else
-                    self.next_wave_in = 45
-                end
-            end
-        end
             
+            local nextframe_bullets = {}
+            for _, bullet in pairs(self.bullets) do
+                bullet:update(dt)
+
+                local target = nil
+                local targetdist = bullet.size
+                for _, enemy in pairs(self.enemies) do
+                    local d = Utils.distanceOO(enemy, bullet) - enemy.size
+                    if d <= targetdist then
+                        target = enemy
+                        targetdist = d
+                    end
+                end
+                if target then
+                    -- bullet:hit(target) later, for now just apply damage and stop keeping track of the bullet -- Lilla
+                    target.hp = target.hp - bullet.damage
+                elseif bullet.x >   0 - self.oob_distance
+                and    bullet.y >   0 - self.oob_distance
+                and    bullet.x < 720 + self.oob_distance
+                and    bullet.y < 720 + self.oob_distance
+                then
+                    table.insert(nextframe_bullets, bullet)
+                end
+            end
+            self.bullets = nextframe_bullets
+            
+            for k = #self.enemies, 1, -1 do
+                local enemy = self.enemies[k]
+                if enemy.hp < 0 then
+                    table.remove(self.enemies, k)
+                    self.money = self.money + enemy.money
+                elseif enemy.reachedEnd then
+                    table.remove(self.enemies, k)
+                    self.crossed = self.crossed + 1
+                    self.health = self.health - enemy.hp/1000
+                end
+            end
+            
+            --enemy spawn attempt 2
+            if self.next_wave_in > 0 then
+                self.next_wave_in = self.next_wave_in - dt
+                if self.next_wave_in <= 0 then
+                    self.wave_count = self.wave_count + 1
+                    self.wave_enemies_left = self.wave_count
+                end
+            else
+                if self.next_enemy_in > 0 then
+                    self.next_enemy_in = self.next_enemy_in - dt
+                else
+                    local e = enemy_kinds[math.random(math.min(math.floor(self.wave_count/5 + 1), #enemy_kinds))]
+                    local x, y = unpack(self.path[1])
+                    self:addEnemy(Enemy.new(x, y, e.size, e.speed, Utils.angleBetweenXYXY(x,  y, self.path[2][1], self.path[2][2]), e.hp, e.type))
+                    self.wave_enemies_left = self.wave_enemies_left - 1
+                    if self.wave_enemies_left > 0 then
+                        self.next_enemy_in = math.random()*2+0.5
+                    else
+                        self.next_wave_in = 45
+                    end
+                end
+            end
+        end
     end,
 
     draw = function(self)
@@ -229,6 +231,18 @@ local engine = {
             love.graphics.print("Call in next wave now!", 1030, 30)
             love.graphics.rectangle("line", 1000, 25, 280, 24)
         end
+        
+        love.graphics.setColor(Utils.HSVA(0, 1, 0.8, 1))
+        love.graphics.setLineWidth(3)
+        love.graphics.rectangle("line", 820, 665, 360, 25)
+        love.graphics.setLineWidth(1)
+        if self.health > 0 then 
+            love.graphics.print("Town health:", 850, 645)
+            love.graphics.rectangle("fill", 820, 665, 360*self.health, 25)
+        else
+            love.graphics.print("Oh no! The down was destroyed!", 850, 645)
+            love.graphics.print("Try again?", 950, 670)
+        end
 
         for k, entry in ipairs(shoplist) do
             local currentcost = entry.cost*costscale^self.tower_counts[k]
@@ -259,23 +273,29 @@ local engine = {
     
     mousepressed = function(self, x, y, button, _, _)
         if button == 1 then 
-            if x > 1000 and y >= 25 and y < 50 and not self.placing_tower then
-                self.next_wave_in = 0.01
-            elseif x >= 720 and not self.placing_tower then
-                local item = shoplist[math.floor(y/50)]
-                local currentcost = item and item.cost*costscale^self.tower_counts[item.i]
-                if item and self.money >= currentcost then
-                    self.money = self.money - currentcost
-                    self.tower_clicks = {}
-                    self.placing_tower = item
+            if self.health > 0 then
+                if x > 1000 and y >= 25 and y < 50 and not self.placing_tower then
+                    self.next_wave_in = 0.01
+                elseif x >= 720 and not self.placing_tower then
+                    local item = shoplist[math.floor(y/50)]
+                    local currentcost = item and item.cost*costscale^self.tower_counts[item.i]
+                    if item and self.money >= currentcost then
+                        self.money = self.money - currentcost
+                        self.tower_clicks = {}
+                        self.placing_tower = item
+                    end
+                elseif x < 720 and self.placing_tower then
+                    table.insert(self.tower_clicks, {x = x, y = y})
+                    if #self.tower_clicks == self.placing_tower.clicks then
+                        local pos = table.remove(self.tower_clicks, 1)
+                        self:addTower(Tower.new(pos.x, pos.y, self.placing_tower.key, Utils.HSVA(self.placing_tower.i*30, 0.5), self.tower_clicks))
+                        self.tower_counts[self.placing_tower.i] = self.tower_counts[self.placing_tower.i] + 1
+                        self.placing_tower = nil
+                    end
                 end
-            elseif x < 720 and self.placing_tower then
-                table.insert(self.tower_clicks, {x = x, y = y})
-                if #self.tower_clicks == self.placing_tower.clicks then
-                    local pos = table.remove(self.tower_clicks, 1)
-                    self:addTower(Tower.new(pos.x, pos.y, self.placing_tower.key, Utils.HSVA(self.placing_tower.i*30, 0.5), self.tower_clicks))
-                    self.tower_counts[self.placing_tower.i] = self.tower_counts[self.placing_tower.i] + 1
-                    self.placing_tower = nil
+            else
+                if x > 820 and x < 820+260 and y > 665 and y < 665+25 then
+                    self:reset(self.path, 300)
                 end
             end
         end
