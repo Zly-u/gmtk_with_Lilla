@@ -73,7 +73,7 @@ local engine = {
         self:clearTowers()
         self:setPath(path)
         self.money = startmoney
-        self.health = 1,
+        self.health = 1
         self.crossed = 0
         --[[
         self.difficulty = 0
