@@ -96,7 +96,7 @@ local Tower = {
                 love.graphics.line(self.x, self.y, self.actual_x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
                 --]]
 
-                love.graphics.setColor(1,1,1,1)
+                love.graphics.setColor(self.colour)
                 local body = self.sprites.idle.body
                 local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
                 local xs = 1
@@ -149,11 +149,13 @@ local Tower = {
                     end
                     local d = Utils.distanceOO(self, self.home_pos)
                     if d > self.patroling_radius and not self.isOutside then
-                        local home_angle = Utils.angleBetweenOO(self, self.home_pos)
-                        self.actual_angle = home_angle - math.rad(math.random(-30, 30))
                         self.isOutside = true
                     end
-                    if d < self.patroling_radius * 0.7 and self.isOutside then
+                    if self.isOutside then
+                        local home_angle = Utils.angleBetweenOO(self, self.home_pos)
+                        self.actual_angle = home_angle -- - math.rad(math.random(-30, 30))
+                    end
+                    if d < self.patroling_radius * 0.8 and self.isOutside then
                         self.isOutside = false
                     end
 
@@ -181,10 +183,10 @@ local Tower = {
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
                 --]]
 
-                love.graphics.circle("line", self.home_pos.x, self.home_pos.y, self.patroling_radius)
-                love.graphics.setColor(self.colour)
-
                 love.graphics.setColor(1,1,1,1)
+                love.graphics.circle("line", self.home_pos.x, self.home_pos.y, self.patroling_radius)
+
+                love.graphics.setColor(self.colour)
                 local body = self.sprites.idle.body
                 local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
                 local xs = 1
@@ -471,6 +473,7 @@ local Tower = {
                 self.actual_angle = math.random()*math.tau
                 self.angle = self.actual_angle
                 self.angular_speed = math.pi/2
+                self.shake = 0
 
                 self.turn_cooldown = 0.2 + math.random()*0.8
                 self.turn_delay = 0
@@ -479,12 +482,13 @@ local Tower = {
             update = function(self, target, dt)
                 local smoothingVal = not target and 0.04 or 0.2
                 self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
-
+                
                 print(self.actual_angle)
                 if not target then
+                    self.shake = math.max(0, self.shake - smoothingVal)
                     --What it draws and uses to calculate stuff with enemy's pos
-                    self.x = self.x + (self.actual_x - self.x) * smoothingVal
-                    self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                    self.x = self.x + (self.actual_x - self.x) * smoothingVal + Utils.randomSign()*math.random()*self.shake
+                    self.y = self.y + (self.actual_y - self.y) * smoothingVal + Utils.randomSign()*math.random()*self.shake
 
                     --Actual Position
                     self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
@@ -497,6 +501,9 @@ local Tower = {
                         self.turn_delay = 0
                     end
                 else
+                    self.shake = math.min(5, self.shake + smoothingVal)
+                    self.x = self.x + (self.actual_x - self.x) * smoothingVal + Utils.randomSign()*math.random()*self.shake
+                    self.y = self.y + (self.actual_y - self.y) * smoothingVal + Utils.randomSign()*math.random()*self.shake
                     self.last_shot = self.last_shot + dt
 
                     if self.last_shot > self.cooldown then
@@ -522,7 +529,7 @@ local Tower = {
         }
     }
 }
-function Tower.new(x, y, type, extra)
+function Tower.new(x, y, type, colour, extra)
     local tower = {
         actual_x    = x or 0,
         actual_y    = y or 0,
@@ -535,7 +542,7 @@ function Tower.new(x, y, type, extra)
         size = 10,
         radius = 100,
         speed = 20,
-        colour = {0.1,0.7,0.5,1},
+        colour = colour or {1,1,1,1}, --{0.1,0.7,0.5,1},
         last_shot = 0,
         angular_speed = math.pi/8,
 
