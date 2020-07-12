@@ -150,34 +150,6 @@ local engine = {
             end
         end
         
-        
-        -- enemy spawn
-        --[[
-        self.difficulty = self.difficulty + dt
-        if self.next_wave_in > 0 then
-            self.next_wave_in = self.next_wave_in - dt
-            if self.next_wave_in <= 0 then
-                self.wave_current_diff = self.difficulty
-            end
-        else
-            if self.next_enemy_in > 0 then
-                self.next_enemy_in = self.next_enemy_in - dt
-            else
-                local e = enemy_kinds[math.random(math.min(math.floor(self.difficulty/10 + 1), #enemy_kinds))]
-                local diffmult = math.max(self.wave_current_diff, self.difficulty * 1.2 * math.random())*0.1
-                local x, y = unpack(self.path[1])
-                self:addEnemy(Enemy.new(x, y, e.size, e.speed, math.tau*math.random(), e.hp*diffmult, "basic"))
-                self.wave_current_diff = self.wave_current_diff - diffmult*10
-                print(self.wave_current_diff, diffmult)
-                if self.wave_current_diff > 0 then
-                    self.next_enemy_in = math.random()*0.5
-                else
-                    self.next_wave_in = 20+math.random(40)
-                end
-            end
-        end
-        ]]
-        
         --enemy spawn attempt 2
         if self.next_wave_in > 0 then
             self.next_wave_in = self.next_wave_in - dt
@@ -230,9 +202,9 @@ local engine = {
             --Drawing entities
             love.graphics.setColor(1,1,1,1)
             love.graphics.rectangle("line", 1,0, 719,719)
+            for _, bullet in pairs(self.bullets) do bullet:draw() end
             for _, tower  in pairs(self.towers ) do tower :draw() end
             for _, enemy  in pairs(self.enemies) do enemy :draw() end
-            for _, bullet in pairs(self.bullets) do bullet:draw() end
 
         end love.graphics.setCanvas()
 
@@ -272,7 +244,7 @@ local engine = {
         love.graphics.circle("line", mx, my, 10)
     end,
     
-    mousepressed = function(self, x, y, button, istouch, presses)
+    mousepressed = function(self, x, y, button, _, _)
         if button == 1 then 
             if x >= 720 and not self.placing_tower then
                 local item = shoplist[math.floor(y/50)]

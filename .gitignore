@@ -2,3 +2,5 @@
 .idea
 *.iml
 *.bat
+*.pyxel
+*.pdn

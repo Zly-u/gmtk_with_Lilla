@@ -27,6 +27,8 @@ Bullet.new = function(x, y, size, dir, speed, damage, _type)
 
         damage = damage,
 
+        sprite = nil,
+
         --TODO: maybe, just to not make it travel across the screen idk
         --destX = nil,
         --destY = nil,

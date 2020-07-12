@@ -17,10 +17,12 @@ local function common_isInRadius(self, targets)
 end
 
 local Tower = {
+
     fire = function(self, target, dt)
         self.last_shot = self.last_shot + dt
         if target then
             if self.last_shot > self.cooldown then
+                self.anim_delay = self.anim_cooldown
                 self.last_shot = 0
                 return Bullet.new(self.x, self.y, self.bullet.size, self.angle, self.bullet.speed, self.bullet.damage, self.bullet.type)
             end
@@ -42,11 +44,25 @@ local Tower = {
                 self.angle = self.actual_angle
                 self.angular_speed = math.pi/2
 
+                self.size = 25
+
                 self.turn_cooldown = 0.2 + math.random()*0.8
                 self.turn_delay = 0
+
+                self.sprites = {
+                    idle = {
+                        head = love.graphics.newImage("sprites/stroller_head.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    },
+                    attacking = {
+                        head = love.graphics.newImage("sprites/stroller_head_nom.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    }
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
 
                 --What it draws and uses to calculate stuff with enemy's pos
                 local smoothingVal = not target and 0.04 or 0.2
@@ -72,11 +88,26 @@ local Tower = {
 
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(self.colour)
                 love.graphics.circle("fill", self.x, self.y, self.size)
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.actual_x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                --]]
+
+                love.graphics.setColor(1,1,1,1)
+                local body = self.sprites.idle.body
+                local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
+                local xs = 1
+                if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                    xs = -1
+                end
+
+                local ox, oy = 10, 10
+                local offX, offY = -14, 11
+                love.graphics.draw(body, self.x, self.y, 0, xs, 1, body:getWidth()/2, body:getHeight()/2)
+                love.graphics.draw(head, self.x-(body:getWidth()/2.5+offX)*xs, self.y-body:getHeight()/2.5+offY, self.angle+math.pi*((1+xs)/2), xs, 1, head:getWidth()/2+ox, head:getHeight()/2+oy)
             end,
         },
 
@@ -92,9 +123,26 @@ local Tower = {
                 self.home_pos = {x = self.x, y = self.y}
                 self.patroling_radius = 100
                 self.isOutside = false
+
+                self.anim_cooldown = 0.25
+                self.anim_delay = 0
+                self.sprites = {
+                    idle = {
+                        head = love.graphics.newImage("sprites/patroller_head.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    },
+                    attacking = {
+                        head = love.graphics.newImage("sprites/patroller_head_nom.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    }
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
+
+                local smoothingVal = not target and 0.04 or 0.2
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
                 if not target then
                     if not self.isOutside then
                         self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
@@ -110,21 +158,20 @@ local Tower = {
                     end
 
                     --What it draws and uses to calculate stuff with enemy's pos
-                    local smoothingVal = not target and 0.04 or 0.2
                     self.x = self.x + (self.actual_x - self.x) * smoothingVal
                     self.y = self.y + (self.actual_y - self.y) * smoothingVal
-                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
 
                     --Actual Position
                     self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
                     self.actual_y = self.actual_y+math.sin(self.angle)*self.speed*dt
                 else
-                    self.angle = Utils.angleBetweenOO(self, target)
+                    self.actual_angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
             end,
 
             draw = function(self)
+                --[[
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.home_pos.x, self.home_pos.y, self.patroling_radius)
                 love.graphics.setColor(self.colour)
@@ -132,6 +179,24 @@ local Tower = {
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                --]]
+
+                love.graphics.circle("line", self.home_pos.x, self.home_pos.y, self.patroling_radius)
+                love.graphics.setColor(self.colour)
+
+                love.graphics.setColor(1,1,1,1)
+                local body = self.sprites.idle.body
+                local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
+                local xs = 1
+                if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                    xs = -1
+                end
+
+                local ox, oy = 10, 10
+                local offX, offY = -10, 11
+                love.graphics.draw(body, self.x, self.y, 0, xs, 1, body:getWidth()/2, body:getHeight()/2)
+                love.graphics.draw(head, self.x-(body:getWidth()/2.5+offX)*xs, self.y-body:getHeight()/2.5+offY, self.angle+math.pi*((1+xs)/2), xs, 1, head:getWidth()/2+ox, head:getHeight()/2+oy)
+
             end
         },
 
@@ -412,15 +477,14 @@ local Tower = {
             end,
 
             update = function(self, target, dt)
+                local smoothingVal = not target and 0.04 or 0.2
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
 
+                print(self.actual_angle)
                 if not target then
-                    
-
                     --What it draws and uses to calculate stuff with enemy's pos
-                    local smoothingVal = not target and 0.04 or 0.2
                     self.x = self.x + (self.actual_x - self.x) * smoothingVal
                     self.y = self.y + (self.actual_y - self.y) * smoothingVal
-                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
 
                     --Actual Position
                     self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
@@ -433,23 +497,17 @@ local Tower = {
                         self.turn_delay = 0
                     end
                 else
-                    --self.actual_angle = Utils.angleBetweenOO(self, target)
-                    --return self:fire(target, dt)
-                    for k = 1, 5 do
-                        self.last_shot = self.last_shot + dt
-                        if target then
-                            if self.last_shot > self.cooldown then
-                                self.last_shot = 0
-                                return Bullet.new(self.x, self.y,
-                                                  self.bullet.size,
-                                                  math.random()*math.tau,
-                                                  self.bullet.speed*(0.9+0.2*math.random()),
-                                                  self.bullet.damage,
-                                                  self.bullet.type
-                                )
-                            end
-                        end
-                        return nil
+                    self.last_shot = self.last_shot + dt
+
+                    if self.last_shot > self.cooldown then
+                        self.last_shot = 0
+                        return Bullet.new(self.x, self.y,
+                                          self.bullet.size,
+                                          math.random()*math.tau,
+                                          self.bullet.speed*(0.9+0.2*math.random()),
+                                          self.bullet.damage,
+                                          self.bullet.type
+                        )
                     end
                 end
 
@@ -480,6 +538,19 @@ function Tower.new(x, y, type, extra)
         colour = {0.1,0.7,0.5,1},
         last_shot = 0,
         angular_speed = math.pi/8,
+
+        anim_cooldown = 0.5,
+        anim_delay = 0,
+        sprites = {
+            idle = {
+                head = nil,
+                body = nil,
+            },
+            attack = {
+                head = nil,
+                body = nil,
+            },
+        },
 
         cooldown = Tower.towers[type].cooldown,
         bullet   = Tower.towers[type].bullet,
