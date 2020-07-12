@@ -19,7 +19,7 @@ local pathWay = {
 }
 
 function love.load()
-    Game:reset(pathWay, 1000)
+    Game:reset(pathWay, 1000000)
 end
 
 function love.update(dt)
@@ -33,7 +33,7 @@ function love.draw()
     love.graphics.setColor(1,1,1,1)
 end
 
---[[
+---[[
 function love.keypressed(key)
     if key == "e" then Game:addEnemy(Enemy.new(pathWay[1][1], pathWay[1][2], 25, 100, Utils.angleBetweenXYXY(pathWay[1][1], pathWay[1][2], pathWay[2][1], pathWay[2][2]), 100, "funky")) end
 end

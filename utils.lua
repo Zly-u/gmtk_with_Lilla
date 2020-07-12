@@ -109,6 +109,10 @@ local Utils = {
         return math.atan2(math.sin(angle1-angle2), math.cos(angle1-angle2))
     end,
 
+    getSign = function(val)
+        return val ~= 0 and (val/math.abs(val)) or 0
+    end,
+
     tablePrint = tablePrint,
 }
 
