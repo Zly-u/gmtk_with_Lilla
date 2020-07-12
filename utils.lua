@@ -79,18 +79,17 @@ local Utils = {
         g = 1-f -- for descending gradients
         t = 1-s -- min colour intensity based on saturation
         f, g = s*f+t, s*g+t -- apply saturation to the gradient values
-            if i == 0 then colour = {1, f, t, a}
-        elseif i == 1 then colour = {g, 1, t, a}
-        elseif i == 2 then colour = {t, 1, f, a}
-        elseif i == 3 then colour = {t, g, 1, a}
-        elseif i == 4 then colour = {f, t, 1, a}
-        elseif i == 5 then colour = {1, t, g, a}
-        else colour = {1, 1, 1, a}
+            if i == 0 then colour = {1, f, t}
+        elseif i == 1 then colour = {g, 1, t}
+        elseif i == 2 then colour = {t, 1, f}
+        elseif i == 3 then colour = {t, g, 1}
+        elseif i == 4 then colour = {f, t, 1}
+        elseif i == 5 then colour = {1, t, g}
+        else colour = {1, 1, 1}
         end
         
-        for n, c in ipairs(colour) do colour[n] = c*v end
-        
-        return colour
+        local r, g, b = unpack(colour)
+        return {r*v, g*v, b*v, a}
     end,
     
     commaValue = function(n) -- credit http://richard.warburton.it

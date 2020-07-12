@@ -8,8 +8,8 @@ local shoplist = {
     {name = "Sleeper",    cost =  10000, clicks = 1, key = "static"},
     {name = "Warper",     cost =  20000, clicks = 1, key = "teleporting"},
     {name = "Marcher",    cost =  50000, clicks = 2, key = "patrol2p"},
-    {name = "Superposer", cost = 120000, clicks = 4, key = "quantum"},
-    {name = "Rain Maker", cost = 660000, clicks = 4, key = "little_goblin"},
+    {name = "Entangler",  cost = 120000, clicks = 4, key = "quantum"},
+    {name = "Rain Maker", cost = 660000, clicks = 1, key = "little_goblin"},
 }
 for i = 1, #shoplist do shoplist[i].i = i end
 
@@ -207,6 +207,8 @@ local engine = {
         love.graphics.setCanvas(self.canvas) do
             love.graphics.setColor(0,0,0,0)
             love.graphics.clear()
+            love.graphics.setColor(Utils.HSVA(100, 0.5, 0.7))
+            love.graphics.rectangle("fill", 0,0,720,720)
             
             --Path preview
             local line = {}
@@ -215,12 +217,12 @@ local engine = {
                 table.insert(line, point[1])
                 table.insert(line, point[2])
                 table.insert(line_dip, point[1])
-                table.insert(line_dip, point[2]-0.5*paththickness)
+                table.insert(line_dip, point[2])
             end
             love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
             love.graphics.setLineWidth(2*paththickness)
             love.graphics.line(line)
-            love.graphics.setColor(Utils.HSVA(45, 0.7, 0.5, 1))
+            love.graphics.setColor(Utils.HSVA(45, 0.9, 0.7, 1))
             love.graphics.setLineWidth(paththickness)
             love.graphics.line(line_dip)
             love.graphics.setLineWidth(1)
@@ -238,7 +240,7 @@ local engine = {
         love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
         love.graphics.print(string.format("Current funds: ¤%s", Utils.commaValue(Utils.truncate(self.money, -2))), 750, 30)
         love.graphics.setColor(Utils.HSVA(0, 0.7, 0.8, 1))
-        love.graphics.print(string.format("Wave #%d", self.wave_count), 750, 10)
+        love.graphics.print(string.format("Wave #%d", self.wave_count), 750, 15)
         if self.next_wave_in > 0 then
             love.graphics.print(string.format("Next wave in %d\"", self.next_wave_in), 900, 10)
         end
@@ -246,7 +248,7 @@ local engine = {
         for k, entry in ipairs(shoplist) do
             local currentcost = entry.cost*costscale^self.tower_counts[k]
             local canbuy = currentcost < self.money
-            love.graphics.setColor(Utils.HSVA(k*30, canbuy and 1 or 0, 0.3))
+            love.graphics.setColor(Utils.HSVA(k*30, canbuy and 1 or 0, 0.1))
             love.graphics.rectangle("fill", 720, 50*k, 560, 49)
             love.graphics.setColor(Utils.HSVA(k*30, canbuy and 1 or 0, canbuy and 1 or 0.7))
             love.graphics.rectangle("line", 720, 50*k, 560, 49)
