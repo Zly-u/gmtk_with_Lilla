@@ -43,7 +43,8 @@ local Enemy = {
                 love.graphics.setColor(1, 1, 1, 1)
                 --]]
                 local size = self.size/35
-                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.draw(self.sprite, self.x, self.y, 0, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
 
@@ -107,7 +108,8 @@ local Enemy = {
                 --]]
 
                 local size = self.size/35
-                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.draw(self.sprite, self.x, self.y, 0, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
 
@@ -181,7 +183,8 @@ local Enemy = {
                 --]]
 
                 local size = self.size/35
-                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.draw(self.sprite, self.x, self.y, 0, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
 
@@ -237,7 +240,8 @@ local Enemy = {
                 --]]
 
                 local size = self.size/35
-                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
+                love.graphics.setColor(1,1,1,0.5)
+                love.graphics.draw(self.sprite, self.x, self.y, 0, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
     },
