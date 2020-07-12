@@ -1,10 +1,12 @@
 require("init")
 
+local Utils = require("utils")
 local Game = require("engine")
 local Enemy = require("enemy")
 local Tower = require("tower")
 
 local pathWay = {
+    {-30, -30},
     {0, 0},
     {50, 50},
     {50, 360},
@@ -13,9 +15,8 @@ local pathWay = {
     {670, 360},
     {670, 670},
     {720, 720},
+    {750, 750},
 }
-
-local next_spawn = 3
 
 function love.load()
     Game:reset(pathWay, 1000)
@@ -23,13 +24,6 @@ end
 
 function love.update(dt)
     Game:update(dt)
-    --[[
-    next_spawn = next_spawn - dt
-    if next_spawn <= 0 then
-        Game:addEnemy(Enemy.new(0, 0, 10, 30, 0, 100, "basic"))
-        next_spawn = (1-math.random())^2*9 + 1
-    end
-    ]]
 end
 
 function love.draw()
@@ -39,32 +33,16 @@ function love.draw()
     love.graphics.setColor(1,1,1,1)
 end
 
----[[
+--[[
 function love.keypressed(key)
-    if key == "e" then Game:addEnemy(Enemy.new(0, 0, 25, 80, 0, 100, "basic")) end
+    if key == "e" then Game:addEnemy(Enemy.new(pathWay[1][1], pathWay[1][2], 25, 100, Utils.angleBetweenXYXY(pathWay[1][1], pathWay[1][2], pathWay[2][1], pathWay[2][2]), 100, "funky")) end
 end
 --]]
 
 function love.mousepressed(x, y, button, istouch, presses)
     --[=[
     if button == 1 then
-        --[[
-        local patrol_param = {
-            home_pos = {x = x, y = y},
-            patroling_radius = 100,
-            isOutside = false,
-        }
-        Game:addTower(Tower.new(x, y, 15, 100, 10, math.pi/16, "basic", patrol_param))
-        --]]
-        --[[
-        local tp_param = {
-            tp_cooldown = 1,
-            tp_delay = 0,
-        }
-        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5, "teleporting", tp_param))
-        --]]
-
-        Game:addTower(Tower.new(x, y, 15, 100, 100, math.pi/5, "quantum"))
+        Game:addTower(Tower.new(x, y,  "basic"))
     end
     --]=]
     Game:mousepressed(x, y, button, istouch, presses)

@@ -85,26 +85,30 @@ local engine = {
             enemy:update(self.path, dt)
         end
 
-        for _, tower in pairs(self.towers) do
-            local target = tower:isInRadius(self.enemies)
+        for _, _tower in pairs(self.towers) do
+            local target = _tower:isInRadius(self.enemies)
+            local bullet = _tower:update(target, dt)
 
-            local bullet = tower:update(target, dt)
-            if bullet then table.insert(self.bullets, bullet) end
-            
-            for k = 2, #self.path do
-                local proj = Utils.closestPtOnLn(tower, self.path[k-1], self.path[k])
-                local dist = Utils.distanceOO(proj, tower)
-                while dist == 0 do
-                    tower.x = tower.x + math.random()*0.2-0.1
-                    tower.y = tower.y + math.random()*0.2-0.1
-                    proj = Utils.closestPtOnLn(tower, self.path[k-1], self.path[k])
-                    dist = Utils.distanceOO(proj, tower)
-                end
-                print(tower.x, tower.x, proj.x, proj.y, dist)
-                if dist < paththickness then
-                    local newpos = Utils.extendLine(proj, tower, paththickness)
-                    tower.x = newpos.x
-                    tower.y = newpos.y
+            for _, tower in pairs(_tower.q_towers or {_tower}) do
+                if bullet then table.insert(self.bullets, bullet) end
+                for k = 2, #self.path do
+                    local a_tower = {x = tower.actual_x, y = tower.actual_y}
+                    local proj = Utils.closestPtOnLn(a_tower, self.path[k-1], self.path[k])
+                    local dist = Utils.distanceOO(proj, a_tower)
+                    while dist == 0 do
+                        tower.actual_x = tower.actual_x + math.random()*0.2-0.1
+                        tower.actual_y = tower.actual_y + math.random()*0.2-0.1
+                        a_tower = {x = tower.actual_x, y = tower.actual_y}
+                        proj = Utils.closestPtOnLn(a_tower, self.path[k-1], self.path[k])
+                        dist = Utils.distanceOO(proj, a_tower)
+                    end
+
+                    if dist < paththickness then
+                        local a_tower = {x = tower.actual_x, y = tower.actual_y}
+                        local newpos = Utils.extendLine(proj, a_tower, paththickness)
+                        tower.actual_x = newpos.x
+                        tower.actual_y = newpos.y
+                    end
                 end
             end
         end
@@ -187,7 +191,7 @@ local engine = {
             else
                 local e = enemy_kinds[math.random(math.min(math.floor(self.wave_count/5 + 1), #enemy_kinds))]
                 local x, y = unpack(self.path[1])
-                self:addEnemy(Enemy.new(x, y, e.size, e.speed, math.tau*math.random(), e.hp, "basic"))
+                self:addEnemy(Enemy.new(x, y, e.size, e.speed, Utils.angleBetweenXYXY(x,  y, self.path[2][1], self.path[2][2]), e.hp, "basic"))
                 self.wave_enemies_left = self.wave_enemies_left - 1
                 if self.wave_enemies_left > 0 then
                     self.next_enemy_in = math.random()*0.4+0.1
@@ -280,8 +284,7 @@ local engine = {
                 table.insert(self.tower_clicks, {x = x, y = y})
                 if #self.tower_clicks == self.placing_tower.clicks then
                     local pos = table.remove(self.tower_clicks, 1)
-                    self:addTower(Tower.new(pos.x, pos.y, 15, 100, 15,
-                                math.pi/10, self.placing_tower.key, self.tower_clicks))
+                    self:addTower(Tower.new(pos.x, pos.y, self.placing_tower.key, self.tower_clicks))
                     self.tower_counts[self.placing_tower.i] = self.tower_counts[self.placing_tower.i] + 1
                     self.placing_tower = nil
                 end

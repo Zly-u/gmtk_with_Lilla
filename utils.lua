@@ -38,8 +38,8 @@ local Utils = {
     end,
     
     extendLine = function(A, B, newlength) -- returns a new B' so that [A B'] is same direction as [A B] but its length is newlength
-        if not (A.x and A.y) then A.x, A.y = unpack(L1) end
-        if not (B.x and B.y) then B.x, B.y = unpack(L2) end
+        if not (A.x and A.y) then A.x, A.y = unpack(A) end
+        if not (B.x and B.y) then B.x, B.y = unpack(B) end
         assert (A.x and A.y, "bad argument #1 to extendLine (coordinate missing)")
         assert (B.x and B.y, "bad argument #2 to extendLine (coordinate missing)")
         local lX, lY = B.x - A.x, B.y - A.y  -- vector A->B
@@ -59,6 +59,10 @@ local Utils = {
 
     angleBetweenOO = function(objA, objB)
         return math.atan2(objB.y-objA.y, objB.x-objA.x)
+    end,
+
+    angleBetweenXYXY = function(x1, y1, x2, y2)
+        return math.atan2(y2-y1, x2-x1)
     end,
 
     HSVA = function(h, s, v, a)
@@ -101,7 +105,11 @@ local Utils = {
         local e = 10^d
         return math.floor(n/e)*e
     end,
-    
+
+    angleDifference = function(angle1, angle2)
+        return math.atan2(math.sin(angle1-angle2), math.cos(angle1-angle2))
+    end,
+
     tablePrint = tablePrint,
 }
 

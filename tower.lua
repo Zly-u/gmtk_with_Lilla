@@ -5,7 +5,8 @@ local function common_isInRadius(self, targets)
     local target = nil
     local targetdist = self.radius
     for _, enemy in pairs(targets) do
-        local d = Utils.distanceOO(self, enemy) - enemy.size
+        local pos = {x = self.actual_x, y = self.actual_y}
+        local d = Utils.distanceOO(pos, enemy) - enemy.size
         if d <= targetdist then
             target = enemy
             targetdist = d
@@ -18,11 +19,10 @@ end
 local Tower = {
     fire = function(self, target, dt)
         self.last_shot = self.last_shot + dt
-        if target then 
-            local angle = Utils.angleBetweenOO(self, target)
+        if target then
             if self.last_shot > self.cooldown then
                 self.last_shot = 0
-                return Bullet.new(self.x, self.y, self.bullet.size, angle, self.bullet.speed, self.bullet.damage, self.bullet.type)
+                return Bullet.new(self.x, self.y, self.bullet.size, self.angle, self.bullet.speed, self.bullet.damage, self.bullet.type)
             end
         end
         return nil
@@ -37,18 +37,36 @@ local Tower = {
 
             isInRadius = common_isInRadius,
 
-            init = function(self, clicks)
+            init = function(self, _)
+                self.actual_angle = math.random()*math.tau
+                self.angle = self.actual_angle
+                self.angular_speed = math.pi/2
 
+                self.turn_cooldown = 0.2 + math.random()*0.8
+                self.turn_delay = 0
             end,
 
             update = function(self, target, dt)
-                self.x = self.x + dt * self.speed * math.cos(self.angle)
-                self.y = self.y + dt * self.speed * math.sin(self.angle)
+
+                --What it draws and uses to calculate stuff with enemy's pos
+                local smoothingVal = not target and 0.04 or 0.2
+                self.x = self.x + (self.actual_x - self.x) * smoothingVal
+                self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
+
+                --Actual Position
+                self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
+                self.actual_y = self.actual_y+math.sin(self.angle)*self.speed*dt
 
                 if not target then
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    self.turn_delay = self.turn_delay + dt
+                    if self.turn_delay >= self.turn_cooldown then
+                        self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
+                        self.turn_cooldown = 0.2 + math.random()*0.8
+                        self.turn_delay = 0
+                    end
                 else
-                    self.angle = Utils.angleBetweenOO(self, target)
+                    self.actual_angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
 
@@ -58,7 +76,7 @@ local Tower = {
                 love.graphics.circle("fill", self.x, self.y, self.size)
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
-                love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                love.graphics.line(self.x, self.y, self.actual_x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
             end,
         },
 
@@ -70,7 +88,7 @@ local Tower = {
 
             isInRadius = common_isInRadius,
 
-            init = function(self, clicks)
+            init = function(self, _)
                 self.home_pos = {x = self.x, y = self.y}
                 self.patroling_radius = 100
                 self.isOutside = false
@@ -79,20 +97,27 @@ local Tower = {
             update = function(self, target, dt)
                 if not target then
                     if not self.isOutside then
-                        self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                        self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
                     end
                     local d = Utils.distanceOO(self, self.home_pos)
                     if d > self.patroling_radius and not self.isOutside then
                         local home_angle = Utils.angleBetweenOO(self, self.home_pos)
-                        self.angle = home_angle - math.rad(math.random(-30, 30))
+                        self.actual_angle = home_angle - math.rad(math.random(-30, 30))
                         self.isOutside = true
                     end
                     if d < self.patroling_radius * 0.7 and self.isOutside then
                         self.isOutside = false
                     end
 
-                    self.x = self.x + dt * self.speed * math.cos(self.angle)
-                    self.y = self.y + dt * self.speed * math.sin(self.angle)
+                    --What it draws and uses to calculate stuff with enemy's pos
+                    local smoothingVal = not target and 0.04 or 0.2
+                    self.x = self.x + (self.actual_x - self.x) * smoothingVal
+                    self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
+
+                    --Actual Position
+                    self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
+                    self.actual_y = self.actual_y+math.sin(self.angle)*self.speed*dt
                 else
                     self.angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
@@ -125,24 +150,36 @@ local Tower = {
                     {x = self.x, y = self.y},
                     {x = click.x, y = click.y}
                 }
+
+                self.actual_angle = Utils.angleBetweenOO(self.path[1], self.path[2])
+                self.angle = self.actual_angle
             end,
 
             update = function(self, target, dt)
                 if not target then
-                    self.x = self.x + dt * self.speed * math.cos(self.angle)
-                    self.y = self.y + dt * self.speed * math.sin(self.angle)
                     local waypoint = {
                         x = self.path[self.targetWaypoint].x,
                         y = self.path[self.targetWaypoint].y
                     }
+                    self.actual_angle = Utils.angleBetweenOO(self, waypoint)
 
-                    self.angle = Utils.angleBetweenOO(self, waypoint)
-                    local d = Utils.distanceXYXY(self.x, self.y, waypoint.x, waypoint.y)
+                    --What it draws and uses to calculate stuff with enemy's pos
+                    local smoothingVal = not target and 0.04 or 0.2
+                    self.x = self.x + (self.actual_x - self.x) * smoothingVal
+                    self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
+
+                    --Actual Position
+                    self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
+                    self.actual_y = self.actual_y+math.sin(self.angle)*self.speed*dt
+
+
+                    local d = Utils.distanceOO(self, waypoint)
                     if d < 5 then
                         self.targetWaypoint = (self.targetWaypoint % #self.path) + 1
                     end
                 else
-                    self.angle = Utils.angleBetweenOO(self, target)
+                    self.actual_angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
             end,
@@ -165,7 +202,7 @@ local Tower = {
 
             isInRadius = common_isInRadius,
 
-            init = function(self, params)
+            init = function(self, _)
                 self.cooldown = math.random(5)
                 self.sleep_max = 2
                 self.sleep_current = 0
@@ -175,7 +212,7 @@ local Tower = {
 
             update = function(self, target, dt)
                 if not target then
-                    --self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    --self.angle = self.angle + Utils.randomSign() * self.angular_speed * math.random()
                     if not self.sleeping then
                         self.sleep_current = self.sleep_current + dt/2
                         if self.sleep_current > self.sleep_max then
@@ -192,12 +229,12 @@ local Tower = {
                         self.sleeping = false
                     end
                 else
-                    self.angle = Utils.angleBetweenOO(self, target)
+                    self.actual_angle = Utils.angleBetweenOO(self, target)
+                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * 0.1
                     local b = self:fire(target, dt)
                     if self.last_shot == 0 then self.cooldown = math.random(5) end
                     return b
                 end
-
             end,
 
             draw = function(self)
@@ -216,14 +253,13 @@ local Tower = {
             bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
 
             upgrades = {
+                costs = {
+                    10, 20
+                },
                 {
-                    cost = 10,
-
                     cooldown = 0.5
                 },
                 {
-                    cost = 10,
-
                     bullet = {
                         damage = 2
                     }
@@ -232,29 +268,39 @@ local Tower = {
 
             isInRadius = common_isInRadius,
 
-            init = function(self, clicks)
+            init = function(self, _)
                 self.tp_cooldown = 1
                 self.tp_delay = 0
             end,
 
             update = function(self, target, dt)
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * 0.15
+
+                --What it draws and uses to calculate stuff with enemy's pos
+                local smoothingVal = not target and 0.04 or 0.2
+                self.x = self.x + (self.actual_x - self.x) * smoothingVal
+                self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
+
                 self.tp_delay = self.tp_delay + dt
                 if not target then
                     if self.tp_delay >= self.tp_cooldown then
                         local boundary = self.radius/(2^0.5)
-                        self.x, self.y = math.random(boundary, 720-boundary), math.random(boundary, 720-boundary)
+                        self.actual_x, self.actual_y = math.random(boundary, 720-boundary), math.random(boundary, 720-boundary)
+                        self.x, self.y = self.actual_x, self.actual_y
                         self.tp_delay = 0
                     end
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
                 else
                     if self.tp_delay >= self.tp_cooldown then
                         local rngRadius = math.random(50, 100)
                         local rngRad    = math.random()*math.tau
-                        self.x = target.x + math.cos(rngRad) * rngRadius
-                        self.y = target.y + math.sin(rngRad) * rngRadius
+                        self.actual_x = target.x + math.cos(rngRad) * rngRadius
+                        self.actual_y = target.y + math.sin(rngRad) * rngRadius
+                        self.x, self.y = self.actual_x, self.actual_y
                         self.tp_delay = 0
                     end
-                    self.angle = Utils.angleBetweenOO(self, target)
+                    self.actual_angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
             end,
@@ -279,8 +325,9 @@ local Tower = {
                 for _, q_tower in pairs(self.q_towers) do
                     local target = nil
                     local targetdist = self.radius
+                    local pos = {x = q_tower.actual_x, y = q_tower.actual_y}
                     for _, enemy in pairs(targets) do
-                        local d = Utils.distanceOO(q_tower, enemy) - enemy.size
+                        local d = Utils.distanceOO(pos, enemy) - enemy.size
                         if d <= targetdist then
                             target = enemy
                             targetdist = d
@@ -301,26 +348,31 @@ local Tower = {
                 self.switch_cooldown = 1
                 self.switch_delay = 0
 
-                local boundary = self.radius/(2^0.5)
-                table.insert(self.q_towers, {x = self.x, y = self.y})
+                table.insert(self.q_towers, {actual_x = self.actual_x, actual_y = self.actual_y})
                 for _, pt in ipairs(clicks) do
-                    table.insert(self.q_towers, pt)
+                    table.insert(self.q_towers, {actual_x = pt.x, actual_y = pt.y})
                 end
             end,
 
             update = function(self, target, dt)
+                --What it draws and uses to calculate stuff with enemy's pos
+                local smoothingVal = 0.4
+                self.x = self.x + (self.actual_x - self.x) * smoothingVal
+                self.y = self.y + (self.actual_y - self.y) * smoothingVal
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
+
                 self.switch_delay = self.switch_delay + dt
                 if self.switch_delay >= self.switch_cooldown then
                     local rngActive = self.q_towers[math.random(#self.q_towers)]
-                    self.x, self.y = rngActive.x, rngActive.y
+                    self.actual_x, self.actual_y = rngActive.actual_x, rngActive.actual_y
                     self.switch_cooldown = 0.2 + math.random()
                     self.switch_delay = 0
                 end
 
                 if not target then
-                    self.angle = self.angle + Utils.randomSign() * self.angularspeed * math.random()
+                    self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
                 else
-                    self.angle = Utils.angleBetweenOO(self, target)
+                    self.actual_angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
                 end
             end,
@@ -329,13 +381,13 @@ local Tower = {
                 local points = {}
                 for _, q_tower in pairs(self.q_towers) do
                     love.graphics.setColor(self.colour)
-                    love.graphics.circle("fill", q_tower.x, q_tower.y, self.size)
+                    love.graphics.circle("fill", q_tower.actual_x, q_tower.actual_y, self.size)
                     love.graphics.setColor(1,1,1,0.5)
-                    love.graphics.circle("line", q_tower.x, q_tower.y, self.radius)
-                    love.graphics.line(q_tower.x, q_tower.y, q_tower.x+math.cos(self.angle)*self.radius, q_tower.y+math.sin(self.angle)*self.radius)
+                    love.graphics.circle("line", q_tower.actual_x, q_tower.actual_y, self.radius)
+                    love.graphics.line(q_tower.actual_x, q_tower.actual_y, q_tower.actual_x+math.cos(self.angle)*self.radius, q_tower.actual_y+math.sin(self.angle)*self.radius)
 
-                    table.insert(points, q_tower.x)
-                    table.insert(points, q_tower.y)
+                    table.insert(points, q_tower.actual_x)
+                    table.insert(points, q_tower.actual_y)
                 end
 
                 love.graphics.polygon("line", points)
@@ -343,18 +395,22 @@ local Tower = {
         },
     }
 }
-function Tower.new(x, y, size, radius, speed, ang_speed, type, extra)
+function Tower.new(x, y, type, extra)
     local tower = {
-        x = x,
-        y = y,
-        size = size,
-        radius = radius,
+        actual_x    = x or 0,
+        actual_y    = y or 0,
+        actual_angle= 0,
+
+        x       = x or 0,
+        y       = y or 0,
+        angle   = 0,
+
+        size = 10,
+        radius = 100,
         speed = 20,
         colour = {0.1,0.7,0.5,1},
         last_shot = 0,
-        angle = math.tau*math.random(),
-        speed = speed,
-        angularspeed = ang_speed,
+        angular_speed = math.pi/8,
 
         cooldown = Tower.towers[type].cooldown,
         bullet   = Tower.towers[type].bullet,
