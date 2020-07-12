@@ -10,6 +10,8 @@ local function tablePrint(vTable, vTab)
     end
 end
 
+
+
 local Utils = {
     distanceOO = function(objA, objB)
         return ( (objA.x-objB.x)^2 + (objA.y-objB.y)^2 ) ^ 0.5
@@ -17,6 +19,34 @@ local Utils = {
     
     distanceXYXY = function(xA, yA, xB, yB)
         return ( (xA-xB)^2 + (yA-yB)^2 ) ^ 0.5
+    end,
+    
+    closestPtOnLn = function(P, L1, L2) -- closest point from P on [L1 L2]
+        if not ( P.x and  P.y) then  P.x,  P.y = unpack( P) end
+        if not (L1.x and L1.y) then L1.x, L1.y = unpack(L1) end
+        if not (L2.x and L2.y) then L2.x, L2.y = unpack(L2) end
+        assert ( P.x and  P.y, "bad argument #1 to vectorPtSg (coordinate missing)")
+        assert (L1.x and L1.y, "bad argument #2 to vectorPtSg (coordinate missing)")
+        assert (L2.x and L2.y, "bad argument #3 to vectorPtSg (coordinate missing)")
+        
+        local len2 = (L1.x-L2.x)^2 + (L1.y-L2.y)^2
+        if len2 == 0 then return L1, P end -- case where L1 == L2
+        local l1pX,  l1pY  =  P.x - L1.x,  P.y - L1.y  -- vector L1->P
+        local l1l2X, l1l2Y = L2.x - L1.x, L2.y - L1.y  -- vector L1->L2
+        local t = math.max(0, math.min(1, (l1pX*l1l2X + l1pY*l1l2Y) / len2)) -- dot product to find projection of P on [L1 L2]
+        return {x = L1.x + l1l2X * t, y = L1.y + l1l2Y * t}
+    end,
+    
+    extendLine = function(A, B, newlength) -- returns a new B' so that [A B'] is same direction as [A B] but its length is newlength
+        if not (A.x and A.y) then A.x, A.y = unpack(L1) end
+        if not (B.x and B.y) then B.x, B.y = unpack(L2) end
+        assert (A.x and A.y, "bad argument #1 to extendLine (coordinate missing)")
+        assert (B.x and B.y, "bad argument #2 to extendLine (coordinate missing)")
+        local lX, lY = B.x - A.x, B.y - A.y  -- vector A->B
+        assert(not (lX == 0 and lY == 0), "extendLine: same two points given, cannot get a line to extend") -- there's no line
+        local d = (lX^2+lY^2)^0.5 -- curent distance
+        local t = newlength/d     -- ratio of lengths which gives the multiple of A->B we want
+        return {x = A.x + t*lX, y = A.y + t*lY}
     end,
     
     randomSign = function()

@@ -3,20 +3,23 @@ local Tower = require("tower")
 local Enemy = require("enemy")
 
 local shoplist = {
-    {i = 1, name = "Stroller",   cost =   100, clicks = 1, key = "basic"},
-    {i = 2, name = "Patroller",  cost =  2000, clicks = 1, key = "patrol"},
-    {i = 3, name = "Marcher",    cost =  2000, clicks = 2, key = "patrol2p"},
-    {i = 4, name = "Sleeper",    cost =  5000, clicks = 1, key = "static"},
-    {i = 5, name = "Warper",     cost = 10000, clicks = 1, key = "teleporting"},
-    {i = 6, name = "Superposer", cost = 50000, clicks = 4, key = "quantum"},
+    {name = "Stroller",   cost =    200, clicks = 1, key = "basic"},
+    {name = "Patroller",  cost =   2000, clicks = 1, key = "patrol"},
+    {name = "Sleeper",    cost =  10000, clicks = 1, key = "static"},
+    {name = "Warper",     cost =  20000, clicks = 1, key = "teleporting"},
+    {name = "Marcher",    cost =  50000, clicks = 2, key = "patrol2p"},
+    {name = "Superposer", cost = 120000, clicks = 4, key = "quantum"},
+    {name = "Rain Maker", cost = 660000, clicks = 4, key = "little_goblin"},
 }
+for i = 1, #shoplist do shoplist[i].i = i end
 
+local costscale = 1.05
 local enemy_kinds = {
-    {size = 20, hp = 200, speed =  5}, --big
     {size = 10, hp = 100, speed = 10}, --normal
     {size =  6, hp =  40, speed = 25}, --small
+    {size = 20, hp = 200, speed =  5}, --big
 }
-
+local paththickness = 30
 local engine = {
     towers = {},
     enemies = {},
@@ -25,13 +28,18 @@ local engine = {
     money = 0,
     crossed = 0,
     oob_distance = 100,
-    difficulty = 0,
     canvas = love.graphics.newCanvas(720,720),
     placing_tower = nil,
     tower_clicks = {},
-    next_wave_in = 0,
-    next_enemy_in = 0,
+    --[[
+    difficulty = 0,
     wave_current_diff = 0,
+    --]]
+    next_enemy_in = 0,
+    wave_count = 0,
+    wave_enemies_left = 0,
+    next_wave_in = 0,
+    tower_counts = {},
     
     addTower = function(self, tower)
         table.insert(self.towers, tower)
@@ -59,10 +67,17 @@ local engine = {
         self:setPath(path)
         self.money = startmoney
         self.crossed = 0
+        --[[
         self.difficulty = 0
-        self.next_wave_in = 3
-        self.next_enemy_in = 0
         self.wave_current_diff = 0
+        ]]
+        self.next_enemy_in = 0
+        self.wave_count = 0
+        self.next_wave_in = 3
+        self.wave_enemies_left = 0
+        for i = 1, #shoplist do
+            self.tower_counts[i] = 0
+        end
     end,
     
     update = function(self, dt)
@@ -75,6 +90,23 @@ local engine = {
 
             local bullet = tower:update(target, dt)
             if bullet then table.insert(self.bullets, bullet) end
+            
+            for k = 2, #self.path do
+                local proj = Utils.closestPtOnLn(tower, self.path[k-1], self.path[k])
+                local dist = Utils.distanceOO(proj, tower)
+                while dist == 0 do
+                    tower.x = tower.x + math.random()*0.2-0.1
+                    tower.y = tower.y + math.random()*0.2-0.1
+                    proj = Utils.closestPtOnLn(tower, self.path[k-1], self.path[k])
+                    dist = Utils.distanceOO(proj, tower)
+                end
+                print(tower.x, tower.x, proj.x, proj.y, dist)
+                if dist < paththickness then
+                    local newpos = Utils.extendLine(proj, tower, paththickness)
+                    tower.x = newpos.x
+                    tower.y = newpos.y
+                end
+            end
         end
         
         local nextframe_bullets = {}
@@ -116,6 +148,7 @@ local engine = {
         
         
         -- enemy spawn
+        --[[
         self.difficulty = self.difficulty + dt
         if self.next_wave_in > 0 then
             self.next_wave_in = self.next_wave_in - dt
@@ -139,20 +172,38 @@ local engine = {
                 end
             end
         end
+        ]]
+        
+        --enemy spawn attempt 2
+        if self.next_wave_in > 0 then
+            self.next_wave_in = self.next_wave_in - dt
+            if self.next_wave_in <= 0 then
+                self.wave_count = self.wave_count + 1
+                self.wave_enemies_left = self.wave_count
+            end
+        else
+            if self.next_enemy_in > 0 then
+                self.next_enemy_in = self.next_enemy_in - dt
+            else
+                local e = enemy_kinds[math.random(math.min(math.floor(self.wave_count/5 + 1), #enemy_kinds))]
+                local x, y = unpack(self.path[1])
+                self:addEnemy(Enemy.new(x, y, e.size, e.speed, math.tau*math.random(), e.hp, "basic"))
+                self.wave_enemies_left = self.wave_enemies_left - 1
+                if self.wave_enemies_left > 0 then
+                    self.next_enemy_in = math.random()*0.4+0.1
+                else
+                    self.next_wave_in = 45
+                end
+            end
+        end
+            
     end,
 
     draw = function(self)
         love.graphics.setCanvas(self.canvas) do
             love.graphics.setColor(0,0,0,0)
             love.graphics.clear()
-
-            --Drawing entities
-            love.graphics.setColor(1,1,1,1)
-            love.graphics.rectangle("line", 1,0, 719,719)
-            for _, enemy  in pairs(self.enemies) do enemy :draw() end
-            for _, tower  in pairs(self.towers ) do tower :draw() end
-            for _, bullet in pairs(self.bullets) do bullet:draw() end
-
+            
             --Path preview
             local line = {}
             for _, point in ipairs(self.path) do
@@ -160,20 +211,37 @@ local engine = {
                 table.insert(line, point[2])
             end
             love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
+            love.graphics.setLineWidth(2*paththickness)
             love.graphics.line(line)
+            love.graphics.setLineWidth(1)
+
+            --Drawing entities
+            love.graphics.setColor(1,1,1,1)
+            love.graphics.rectangle("line", 1,0, 719,719)
+            for _, tower  in pairs(self.towers ) do tower :draw() end
+            for _, enemy  in pairs(self.enemies) do enemy :draw() end
+            for _, bullet in pairs(self.bullets) do bullet:draw() end
+
         end love.graphics.setCanvas()
 
         --oooooo GUI Related
-        love.graphics.print(string.format("current funds: ¤%s", Utils.commaValue(Utils.truncate(self.money, -2))), 750, 30)
+        love.graphics.setColor(Utils.HSVA(60, 0.7, 0.8, 1))
+        love.graphics.print(string.format("Current funds: ¤%s", Utils.commaValue(Utils.truncate(self.money, -2))), 750, 30)
         love.graphics.setColor(Utils.HSVA(0, 0.7, 0.8, 1))
-        love.graphics.print(string.format("difficulty: %d", self.difficulty), 750, 10)
+        love.graphics.print(string.format("Wave #%d", self.wave_count), 750, 10)
+        if self.next_wave_in > 0 then
+            love.graphics.print(string.format("Next wave in %d\"", self.next_wave_in), 900, 10)
+        end
 
-        for k, entry in pairs(shoplist) do
-            love.graphics.setColor(Utils.HSVA(k*30, 1, 0.3))
+        for k, entry in ipairs(shoplist) do
+            local currentcost = entry.cost*costscale^self.tower_counts[k]
+            local canbuy = currentcost < self.money
+            love.graphics.setColor(Utils.HSVA(k*30, canbuy and 1 or 0, 0.3))
             love.graphics.rectangle("fill", 720, 50*k, 560, 49)
-            love.graphics.setColor(Utils.HSVA(k*30))
+            love.graphics.setColor(Utils.HSVA(k*30, canbuy and 1 or 0, canbuy and 1 or 0.7))
             love.graphics.rectangle("line", 720, 50*k, 560, 49)
-            love.graphics.print(string.format("%s: ¤%s", entry.name, Utils.commaValue(entry.cost)), 750, 20+50*k)
+            local cost = Utils.commaValue(Utils.truncate(currentcost, -2))
+            love.graphics.print(string.format("%s: ¤%s", entry.name, cost), 750, 20+50*k)
         end
 
         --Draw shits ooooooo
@@ -196,8 +264,9 @@ local engine = {
         if button == 1 then 
             if x >= 720 and not self.placing_tower then
                 local item = shoplist[math.floor(y/50)]
-                if item and self.money >= item.cost then
-                    self.money = self.money - item.cost
+                local currentcost = item.cost*costscale^self.tower_counts[item.i]
+                if item and self.money >= currentcost then
+                    self.money = self.money - currentcost
                     self.tower_clicks = {}
                     self.placing_tower = item
                 end
@@ -207,6 +276,7 @@ local engine = {
                     local pos = table.remove(self.tower_clicks, 1)
                     self:addTower(Tower.new(pos.x, pos.y, 15, 100, 15,
                                 math.pi/10, self.placing_tower.key, self.tower_clicks))
+                    self.tower_counts[self.placing_tower.i] = self.tower_counts[self.placing_tower.i] + 1
                     self.placing_tower = nil
                 end
             end
