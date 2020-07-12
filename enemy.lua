@@ -35,11 +35,15 @@ local Enemy = {
                 end
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(1, 0, 0, 1)
                 love.graphics.rectangle("fill", self.x-self.size/2, self.y-self.size/2, self.size, self.size)
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.line(self.x, self.y, self.x + math.cos(self.angle)*self.size*1.3, self.y + math.sin(self.angle)*self.size*1.3)
                 love.graphics.setColor(1, 1, 1, 1)
+                --]]
+                local size = self.size/35
+                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
 
@@ -94,11 +98,16 @@ local Enemy = {
                 end
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(1, 0, 0, 1)
                 love.graphics.circle("fill", self.x, self.y, self.size, 3)
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.line(self.x, self.y, self.x + math.cos(self.angle)*self.size*1.3, self.y + math.sin(self.angle)*self.size*1.3)
                 love.graphics.setColor(1, 1, 1, 1)
+                --]]
+
+                local size = self.size/35
+                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
 
@@ -163,11 +172,16 @@ local Enemy = {
                 end
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(1, 0, 0, 1)
                 love.graphics.circle("fill", self.x, self.y, self.size, 5)
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.line(self.x, self.y, self.x + math.cos(self.angle)*self.size*1.3, self.y + math.sin(self.angle)*self.size*1.3)
                 love.graphics.setColor(1, 1, 1, 1)
+                --]]
+
+                local size = self.size/35
+                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
 
@@ -214,11 +228,16 @@ local Enemy = {
                 end
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(1, 0, 0, 1)
                 love.graphics.rectangle("fill", self.x-self.size/2, self.y-self.size/2, self.size, self.size)
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.line(self.x, self.y, self.x + math.cos(self.angle)*self.size*1.3, self.y + math.sin(self.angle)*self.size*1.3)
                 love.graphics.setColor(1, 1, 1, 1)
+                --]]
+
+                local size = self.size/35
+                love.graphics.draw(self.sprite, self.x, self.y, self.angle-math.pi/2, size, size, self.sprite:getWidth()/2, self.sprite:getHeight()/2)
             end
         },
     },
@@ -239,6 +258,7 @@ function Enemy.new(x, y, size, speed, actual_angle, hp, _type)
 
         hp      = hp or 100,
 
+        sprite = love.graphics.newImage("sprites/eye.png"),
         targetWaypoint  = 1,
         reachedEnd      = false,
 
