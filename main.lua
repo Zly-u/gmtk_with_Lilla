@@ -35,7 +35,7 @@ end
 
 ---[[
 function love.keypressed(key)
-    if key == "e" then Game:addEnemy(Enemy.new(pathWay[1][1], pathWay[1][2], 25, 100, Utils.angleBetweenXYXY(pathWay[1][1], pathWay[1][2], pathWay[2][1], pathWay[2][2]), 100, "funky")) end
+    --if key == "e" then Game:addEnemy(Enemy.new(pathWay[1][1], pathWay[1][2], 25, 100, Utils.angleBetweenXYXY(pathWay[1][1], pathWay[1][2], pathWay[2][1], pathWay[2][2]), 100, "funky")) end
 end
 --]]
 
