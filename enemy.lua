@@ -4,7 +4,7 @@ local Enemy = {
     enemies = {
         basic = {
             init = function(self)
-
+                self.money = self.hp/2 * self.speed/3 + math.random()*200
             end,
 
             update = function(self, path, dt)
@@ -48,6 +48,8 @@ local Enemy = {
                 self.isOffWay = false
                 self.offWayDelay = 0
                 self.offWayCooldown = 1
+
+                self.money = self.hp/2 * self.speed + math.random()*400
             end,
 
             update = function(self, path, dt)
@@ -105,6 +107,8 @@ local Enemy = {
                 self.isOffWay = false
                 self.offWayDelay = 0
                 self.offWayCooldown = 1
+
+                self.money = self.hp/1.5 * self.speed + math.random()*600
             end,
 
             update = function(self, path, dt)
@@ -177,6 +181,7 @@ local Enemy = {
                 self.speedFreq = 300+math.random()*400
 
                 self._speed = self.speed
+                self.money = self.hp/2 * self.speed/2 + math.random()*600
             end,
 
             update = function(self, path, dt)
@@ -233,7 +238,6 @@ function Enemy.new(x, y, size, speed, actual_angle, hp, _type)
         speed   = speed or 1,
 
         hp      = hp or 100,
-        money   = hp * speed,
 
         targetWaypoint  = 1,
         reachedEnd      = false,

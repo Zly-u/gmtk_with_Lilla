@@ -33,9 +33,9 @@ local Tower = {
     towers = {
         basic = {
             cost = 0,
-            cooldown = 1,
+            cooldown = 1.1,
 
-            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+            bullet = {size = 5, speed = 120, damage = 8, type = "basic"},
 
             isInRadius = common_isInRadius,
 
@@ -115,7 +115,7 @@ local Tower = {
             cost = 0,
             cooldown = 0.2,
 
-            bullet = {size = 3, speed = 150, damage = 7, type = "basic"},
+            bullet = {size = 3, speed = 220, damage = 2, type = "basic"},
 
             isInRadius = common_isInRadius,
 
@@ -183,7 +183,7 @@ local Tower = {
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
                 --]]
 
-                love.graphics.setColor(1,1,1,1)
+                love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.home_pos.x, self.home_pos.y, self.patroling_radius)
 
                 love.graphics.setColor(self.colour)
@@ -220,9 +220,27 @@ local Tower = {
 
                 self.actual_angle = Utils.angleBetweenOO(self.path[1], self.path[2])
                 self.angle = self.actual_angle
+
+                self.anim_cooldown = 0.25
+
+                self.sprites = {
+                    idle = {
+                        head = love.graphics.newImage("sprites/marcher_head.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    },
+                    attacking = {
+                        head = love.graphics.newImage("sprites/marcher_head_nom.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    }
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
+
+
+                local smoothingVal = not target and 0.04 or 0.2
+                self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
                 if not target then
                     local waypoint = {
                         x = self.path[self.targetWaypoint].x,
@@ -231,10 +249,8 @@ local Tower = {
                     self.actual_angle = Utils.angleBetweenOO(self, waypoint)
 
                     --What it draws and uses to calculate stuff with enemy's pos
-                    local smoothingVal = not target and 0.04 or 0.2
                     self.x = self.x + (self.actual_x - self.x) * smoothingVal
                     self.y = self.y + (self.actual_y - self.y) * smoothingVal
-                    self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
 
                     --Actual Position
                     self.actual_x = self.actual_x+math.cos(self.angle)*self.speed*dt
@@ -242,7 +258,7 @@ local Tower = {
 
 
                     local d = Utils.distanceOO(self, waypoint)
-                    if d < 5 then
+                    if d < 15 then
                         self.targetWaypoint = (self.targetWaypoint % #self.path) + 1
                     end
                 else
@@ -251,13 +267,28 @@ local Tower = {
                 end
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(self.colour)
                 love.graphics.circle("fill", self.x, self.y, self.size)
-                love.graphics.setColor(1,1,1,0.5)
-                love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                love.graphics.circle("line", self.x, self.y, self.radius)
+                --]]
 
+                love.graphics.setColor(1,1,1,0.5)
                 love.graphics.line(self.path[1].x, self.path[1].y, self.path[2].x, self.path[2].y)
+                love.graphics.setColor(self.colour)
+                local body = self.sprites.idle.body
+                local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
+                local xs = 1
+                if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                    xs = -1
+                end
+
+                local ox, oy = 10, 10
+                local offX, offY = -14, 11
+                love.graphics.draw(body, self.x, self.y, 0, xs, 1, body:getWidth()/2, body:getHeight()/2)
+                love.graphics.draw(head, self.x-(body:getWidth()/2.5+offX)*xs, self.y-body:getHeight()/2.5+offY, self.angle+math.pi*((1+xs)/2), xs, 1, head:getWidth()/2+ox, head:getHeight()/2+oy)
+
             end,
         },
 
@@ -274,16 +305,22 @@ local Tower = {
                 self.sleep_max = 2
                 self.sleep_current = 0
                 self.sleeping = true
-                self.colour[4] = 0.5
+
+                self.sprites = {
+                    sleep  = love.graphics.newImage("sprites/sleeper_slip.png"),
+                    watchL = love.graphics.newImage("sprites/sleeper_lookL.png"),
+                    watchR = love.graphics.newImage("sprites/sleeper_lookR.png"),
+                    attack = love.graphics.newImage("sprites/sleeper_atacc.png"),
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
                 if not target then
                     --self.angle = self.angle + Utils.randomSign() * self.angular_speed * math.random()
                     if not self.sleeping then
                         self.sleep_current = self.sleep_current + dt/2
                         if self.sleep_current > self.sleep_max then
-                            self.colour[4] = 0.5
                             self.sleep_current = 0
                             self.sleeping = true
                         end
@@ -291,7 +328,6 @@ local Tower = {
                 elseif self.sleeping then
                     self.sleep_current = self.sleep_current + dt
                     if self.sleep_current > self.sleep_max then
-                        self.colour[4] = 1
                         self.sleep_current = 0
                         self.sleeping = false
                     end
@@ -305,11 +341,25 @@ local Tower = {
             end,
 
             draw = function(self)
+                --[[
                 love.graphics.setColor(self.colour)
                 love.graphics.circle("fill", self.x, self.y, self.size)
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                --]]
+                local state = self.sprites.sleep
+                if not self.sleeping and self.anim_delay <= 0 then
+                    state = self.sprites.watchL
+                    if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                        state = self.sprites.watchR
+                    end
+                elseif self.anim_delay > 0 then
+                    state = self.sprites.attack
+                end
+
+                love.graphics.setColor(self.colour)
+                love.graphics.draw(state, self.x-state:getWidth()/2, self.y-state:getHeight()/2)
             end,
         },
 
@@ -317,7 +367,7 @@ local Tower = {
             cost = 0,
             cooldown = 1,
 
-            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+            bullet = {size = 5, speed = 350, damage = 13, type = "basic"},
 
             upgrades = {
                 costs = {
@@ -338,9 +388,22 @@ local Tower = {
             init = function(self, _)
                 self.tp_cooldown = 1
                 self.tp_delay = 0
+
+                self.sprites = {
+                    idle = {
+                        head = love.graphics.newImage("sprites/warper_head.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    },
+                    attacking = {
+                        head = love.graphics.newImage("sprites/warper_head_nom.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    }
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
+
                 self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * 0.15
 
                 --What it draws and uses to calculate stuff with enemy's pos
@@ -355,9 +418,9 @@ local Tower = {
                         local boundary = self.radius/(2^0.5)
                         self.actual_x, self.actual_y = math.random(boundary, 720-boundary), math.random(boundary, 720-boundary)
                         self.x, self.y = self.actual_x, self.actual_y
+                        self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
                         self.tp_delay = 0
                     end
-                    self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
                 else
                     if self.tp_delay >= self.tp_cooldown then
                         local rngRadius = math.random(50, 100)
@@ -368,16 +431,33 @@ local Tower = {
                         self.tp_delay = 0
                     end
                     self.actual_angle = Utils.angleBetweenOO(self, target)
+                    self.angle = self.actual_angle
                     return self:fire(target, dt)
                 end
             end,
 
             draw = function(self)
+                --[[
                 love.graphics.setColor(self.colour)
                 love.graphics.circle("fill", self.x, self.y, self.size)
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                --]]
+
+                love.graphics.setColor(self.colour)
+                local body = self.sprites.idle.body
+                local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
+                local xs = 1
+                if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                    xs = -1
+                end
+
+                local ox, oy = 10, 10
+                local offX, offY = -10, 8
+                love.graphics.draw(body, self.x, self.y, 0, xs, 1, body:getWidth()/2, body:getHeight()/2)
+                love.graphics.draw(head, self.x-(body:getWidth()/2.5+offX)*xs, self.y-body:getHeight()/2.5+offY, self.angle+math.pi*((1+xs)/2), xs, 1, head:getWidth()/2+ox, head:getHeight()/2+oy)
+
             end,
         },
 
@@ -385,7 +465,7 @@ local Tower = {
             cost = 0,
             cooldown = 1,
 
-            bullet = {size = 5, speed = 70, damage = 15, type = "basic"},
+            bullet = {size = 5, speed = 500, damage = 15, type = "basic"},
 
             isInRadius = function(self, targets)
                 local targetList = {}
@@ -419,9 +499,34 @@ local Tower = {
                 for _, pt in ipairs(clicks) do
                     table.insert(self.q_towers, {actual_x = pt.x, actual_y = pt.y})
                 end
+
+                self.sprites = {
+                    fake = {
+                        idle = {
+                            head = love.graphics.newImage("sprites/entangler_head.png"),
+                            body = love.graphics.newImage("sprites/body.png"),
+                        },
+                        attacking = {
+                            head = love.graphics.newImage("sprites/entangler_head_nom.png"),
+                            body = love.graphics.newImage("sprites/body.png"),
+                        }
+                    },
+                    tru = {
+                        idle = {
+                            head = love.graphics.newImage("sprites/entangler_true_head.png"),
+                            body = love.graphics.newImage("sprites/body.png"),
+                        },
+                        attacking = {
+                            head = love.graphics.newImage("sprites/entangler_true_head_nom.png"),
+                            body = love.graphics.newImage("sprites/body.png"),
+                        }
+                    }
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
+
                 --What it draws and uses to calculate stuff with enemy's pos
                 local smoothingVal = 0.4
                 self.x = self.x + (self.actual_x - self.x) * smoothingVal
@@ -430,6 +535,7 @@ local Tower = {
 
                 self.switch_delay = self.switch_delay + dt
                 if self.switch_delay >= self.switch_cooldown then
+                    self.actual_angle = math.random() * math.pi
                     local rngActive = self.q_towers[math.random(#self.q_towers)]
                     self.actual_x, self.actual_y = rngActive.actual_x, rngActive.actual_y
                     self.switch_cooldown = 0.2 + math.random()
@@ -437,7 +543,7 @@ local Tower = {
                 end
 
                 if not target then
-                    self.actual_angle = self.actual_angle + Utils.randomSign() * self.angular_speed * math.random()
+
                 else
                     self.actual_angle = Utils.angleBetweenOO(self, target)
                     return self:fire(target, dt)
@@ -446,17 +552,31 @@ local Tower = {
 
             draw = function(self)
                 local points = {}
-                for _, q_tower in pairs(self.q_towers) do
+                for i, q_tower in pairs(self.q_towers) do
+                    --[[
                     love.graphics.setColor(self.colour)
                     love.graphics.circle("fill", q_tower.actual_x, q_tower.actual_y, self.size)
-                    love.graphics.setColor(1,1,1,0.5)
                     love.graphics.circle("line", q_tower.actual_x, q_tower.actual_y, self.radius)
                     love.graphics.line(q_tower.actual_x, q_tower.actual_y, q_tower.actual_x+math.cos(self.angle)*self.radius, q_tower.actual_y+math.sin(self.angle)*self.radius)
-
+                    --]]
                     table.insert(points, q_tower.actual_x)
                     table.insert(points, q_tower.actual_y)
-                end
 
+                    love.graphics.setColor(self.colour)
+                    local sType = (self.actual_x == q_tower.actual_x and self.actual_y == q_tower.actual_y) and "tru" or "fake"
+                    local body = self.sprites[sType].idle.body
+                    local head = self.anim_delay <= 0 and self.sprites[sType].idle.head or self.sprites[sType].attacking.head
+                    local xs = 1
+                    if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                        xs = -1
+                    end
+
+                    local ox, oy = 10, 10
+                    local offX, offY = -14, 11
+                    love.graphics.draw(body, q_tower.actual_x, q_tower.actual_y, 0, xs, 1, body:getWidth()/2, body:getHeight()/2)
+                    love.graphics.draw(head, q_tower.actual_x-(body:getWidth()/2.5+offX)*xs, q_tower.actual_y-body:getHeight()/2.5+offY, self.angle+math.pi*((1+xs)/2), xs, 1, head:getWidth()/2+ox, head:getHeight()/2+oy)
+                end
+                love.graphics.setColor(1,1,1,0.5)
                 love.graphics.polygon("line", points)
             end,
         },
@@ -477,13 +597,25 @@ local Tower = {
 
                 self.turn_cooldown = 0.2 + math.random()*0.8
                 self.turn_delay = 0
+
+                self.sprites = {
+                    idle = {
+                        head = love.graphics.newImage("sprites/rainmaker_head.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    },
+                    attacking = {
+                        head = love.graphics.newImage("sprites/rainmaker_head_nom.png"),
+                        body = love.graphics.newImage("sprites/body.png"),
+                    }
+                }
             end,
 
             update = function(self, target, dt)
+                self.anim_delay = math.max(self.anim_delay - dt, 0)
+
                 local smoothingVal = not target and 0.04 or 0.2
                 self.angle = self.angle + Utils.angleDifference(self.actual_angle, self.angle) * smoothingVal
-                
-                print(self.actual_angle)
+
                 if not target then
                     self.shake = math.max(0, self.shake - smoothingVal)
                     --What it draws and uses to calculate stuff with enemy's pos
@@ -508,6 +640,7 @@ local Tower = {
 
                     if self.last_shot > self.cooldown then
                         self.last_shot = 0
+                        self.anim_delay = self.anim_cooldown
                         return Bullet.new(self.x, self.y,
                                           self.bullet.size,
                                           math.random()*math.tau,
@@ -520,11 +653,26 @@ local Tower = {
 
             end,
             draw = function(self)
+                --[[
                 love.graphics.setColor(self.colour)
                 love.graphics.circle("fill", self.x, self.y, self.size)
                 love.graphics.setColor(1,1,1,0.5)
                 love.graphics.circle("line", self.x, self.y, self.radius)
                 love.graphics.line(self.x, self.y, self.actual_x+math.cos(self.angle)*self.radius, self.y+math.sin(self.angle)*self.radius)
+                --]]
+
+                love.graphics.setColor(self.colour)
+                local body = self.sprites.idle.body
+                local head = self.anim_delay <= 0 and self.sprites.idle.head or self.sprites.attacking.head
+                local xs = 1
+                if (self.angle % math.tau) < math.pi/2 or (self.angle % math.tau) > math.pi + math.pi/2 then
+                    xs = -1
+                end
+
+                local ox, oy = 10, 10
+                local offX, offY = -14, 11
+                love.graphics.draw(body, self.x, self.y, 0, xs, 1, body:getWidth()/2, body:getHeight()/2)
+                love.graphics.draw(head, self.x-(body:getWidth()/2.5+offX)*xs, self.y-body:getHeight()/2.5+offY, self.angle+math.pi*((1+xs)/2), xs, 1, head:getWidth()/2+ox, head:getHeight()/2+oy)
             end,
         }
     }

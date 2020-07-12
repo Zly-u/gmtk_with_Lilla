@@ -13,7 +13,7 @@ local shoplist = {
 }
 for i = 1, #shoplist do shoplist[i].i = i end
 
-local costscale = 1.05
+local costscale = 1.2
 local enemy_kinds = {
     {size = 20, hp =  50, speed = 20, type = "basic"}, --normal
     {size = 10, hp =  25, speed = 40, type = "basic"}, --small
@@ -99,6 +99,12 @@ local engine = {
                 local bullet = _tower:update(target, dt)
 
                 for _, tower in pairs(_tower.q_towers or {_tower}) do
+                    local oob = 50
+                    tower.actual_x = tower.actual_x <= oob and oob or tower.actual_x
+                    tower.actual_x = tower.actual_x >= 720-oob and 720-oob or tower.actual_x
+                    tower.actual_y = tower.actual_y <= oob and oob or tower.actual_y
+                    tower.actual_y = tower.actual_y >= 720-oob and 720-oob or tower.actual_y
+
                     if bullet then table.insert(self.bullets, bullet) end
                     for k = 2, #self.path do
                         local a_tower = {x = tower.actual_x, y = tower.actual_y}
