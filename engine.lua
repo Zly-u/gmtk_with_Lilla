@@ -8,16 +8,22 @@ local shoplist = {
     {name = "Sleeper",    cost =  10000, clicks = 1, key = "static"},
     {name = "Warper",     cost =  20000, clicks = 1, key = "teleporting"},
     {name = "Marcher",    cost =  50000, clicks = 2, key = "patrol2p"},
-    {name = "Entangler",  cost = 120000, clicks = 4, key = "quantum"},
-    {name = "Rain Maker", cost = 660000, clicks = 1, key = "little_goblin"},
+    {name = "Entangler",  cost = 100000, clicks = 4, key = "quantum"},
+    {name = "Rain Maker", cost = 500000, clicks = 1, key = "little_goblin"},
 }
 for i = 1, #shoplist do shoplist[i].i = i end
 
 local costscale = 1.05
 local enemy_kinds = {
-    {size = 10, hp = 100, speed = 10}, --normal
-    {size =  6, hp =  40, speed = 25}, --small
-    {size = 20, hp = 200, speed =  5}, --big
+    {size = 20, hp =  50, speed = 20, type = "basic"}, --normal
+    {size = 10, hp =  25, speed = 40, type = "basic"}, --small
+    {size = 40, hp = 100, speed = 10, type = "basic"}, --big
+    {size = 20, hp =  75, speed = 15, type = "funky"},
+    {size = 20, hp =  75, speed = 15, type = "drunk"},
+    {size = 15, hp =  85, speed = 17, type = "funky"},
+    {size =100, hp = 300, speed =  5, type = "wandering"},
+    {size = 40, hp = 150, speed =  8, type = "funky"},
+    {size = 40, hp = 150, speed =  8, type = "drunk"},
 }
 local paththickness = 30
 local engine = {
@@ -26,6 +32,7 @@ local engine = {
     bullets = {},
     path = {},
     money = 0,
+    health = 0,
     crossed = 0,
     oob_distance = 100,
     canvas = love.graphics.newCanvas(720,720),
@@ -66,6 +73,7 @@ local engine = {
         self:clearTowers()
         self:setPath(path)
         self.money = startmoney
+        self.health = 1,
         self.crossed = 0
         --[[
         self.difficulty = 0
@@ -163,10 +171,10 @@ local engine = {
             else
                 local e = enemy_kinds[math.random(math.min(math.floor(self.wave_count/5 + 1), #enemy_kinds))]
                 local x, y = unpack(self.path[1])
-                self:addEnemy(Enemy.new(x, y, e.size, e.speed, Utils.angleBetweenXYXY(x,  y, self.path[2][1], self.path[2][2]), e.hp, "basic"))
+                self:addEnemy(Enemy.new(x, y, e.size, e.speed, Utils.angleBetweenXYXY(x,  y, self.path[2][1], self.path[2][2]), e.hp, e.type))
                 self.wave_enemies_left = self.wave_enemies_left - 1
                 if self.wave_enemies_left > 0 then
-                    self.next_enemy_in = math.random()*0.4+0.1
+                    self.next_enemy_in = math.random()*2+0.5
                 else
                     self.next_wave_in = 45
                 end
@@ -214,7 +222,12 @@ local engine = {
         love.graphics.setColor(Utils.HSVA(0, 0.7, 0.8, 1))
         love.graphics.print(string.format("Wave #%d", self.wave_count), 750, 15)
         if self.next_wave_in > 0 then
-            love.graphics.print(string.format("Next wave in %d\"", self.next_wave_in), 900, 10)
+            love.graphics.print(string.format("Next wave in %d\"", self.next_wave_in), 1030, 10)
+            love.graphics.setColor(Utils.HSVA(0, 0.7, 0.1, 1))
+            love.graphics.rectangle("fill", 1000, 25, 280, 24)
+            love.graphics.setColor(Utils.HSVA(0, 0.7, 0.8, 1))
+            love.graphics.print("Call in next wave now!", 1030, 30)
+            love.graphics.rectangle("line", 1000, 25, 280, 24)
         end
 
         for k, entry in ipairs(shoplist) do
@@ -246,7 +259,9 @@ local engine = {
     
     mousepressed = function(self, x, y, button, _, _)
         if button == 1 then 
-            if x >= 720 and not self.placing_tower then
+            if x > 1000 and y >= 25 and y < 50 and not self.placing_tower then
+                self.next_wave_in = 0.01
+            elseif x >= 720 and not self.placing_tower then
                 local item = shoplist[math.floor(y/50)]
                 local currentcost = item and item.cost*costscale^self.tower_counts[item.i]
                 if item and self.money >= currentcost then

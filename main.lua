@@ -19,7 +19,7 @@ local pathWay = {
 }
 
 function love.load()
-    Game:reset(pathWay, 1000000)
+    Game:reset(pathWay, 1000)
 end
 
 function love.update(dt)
